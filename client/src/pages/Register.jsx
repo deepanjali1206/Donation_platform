@@ -114,7 +114,7 @@ const Register = () => {
                       <button
                         type="button"
                         className="btn btn-outline-primary"
-                        onClick={() => navigate('/')}
+                        onClick={() => navigate('/Login')}
                       >
                         Login
                       </button>
