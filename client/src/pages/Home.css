@@ -1,0 +1,12 @@
+.hero {
+  height: 90vh;
+  background: linear-gradient(to right, #ff4f81, #ff884b);
+  color: white;
+  display: flex;
+  align-items: center;
+}
+
+.hero .container {
+  text-align: left;
+  max-width: 700px;
+}
