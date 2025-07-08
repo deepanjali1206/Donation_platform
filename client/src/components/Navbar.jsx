@@ -26,6 +26,9 @@ function Navbar() {
             <li className="nav-item">
               <Link className="nav-link" to="/donate">Donate</Link>
             </li>
+             <li className="nav-item">
+              <Link className="nav-link" to="/request">Request-Help</Link>
+            </li>
             <li className="nav-item">
               <Link className="nav-link" to="/contact">Contact</Link>
             </li>
