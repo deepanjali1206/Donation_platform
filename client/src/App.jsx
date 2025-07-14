@@ -6,13 +6,14 @@ import Navbar from './components/Navbar';
 import DonationForm from './components/DonationForm';
 import RequestForm from './components/RequestForm';
 import Home from './pages/Home'; 
+import MyDonations from './pages/MyDonations';
+import ContactPage from './pages/ContactPage';
 
 function App() {
   const [user, setUser] = useState(null);
 
-  // Simulate fetching user from backend/localStorage (you can replace this)
   useEffect(() => {
-    // You can replace this with real authentication logic
+   
     const storedUser = JSON.parse(localStorage.getItem("circleUser"));
     if (storedUser) {
       setUser(storedUser);
@@ -24,10 +25,13 @@ function App() {
       <Navbar user={user} /> 
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login setUser={setUser} />} /> {/* Pass setUser */}
+        <Route path="/login" element={<Login setUser={setUser} />} /> 
         <Route path="/register" element={<Register setUser={setUser} />} />
         <Route path="/donate" element={<DonationForm />} />
         <Route path="/request" element={<RequestForm />} />
+        <Route path="/contact" element={<ContactPage />} />
+        
+        <Route path="/my-donations" element={<MyDonations />} />
       </Routes>
     </>
   );

@@ -1,27 +1,53 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './RequestForm.css'; 
+import './RequestForm.css';
 
 const RequestForm = () => {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    category: '',
+    item: '',
     urgency: '',
+    quantity: '',
     contact: '',
+    isNGO: false,
   });
 
+  const [coordinates, setCoordinates] = useState([0, 0]); // [lng, lat]
+
+  // Get user's geolocation
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          const { latitude, longitude } = pos.coords;
+          setCoordinates([longitude, latitude]);
+        },
+        err => {
+          console.error("Geolocation error:", err.message);
+        }
+      );
+    }
+  }, []);
+
   const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const payload = {
+      item: formData.item,
+      urgency: formData.urgency,
+      quantity: parseInt(formData.quantity) || 1,
+      coordinates,
+      isNGO: formData.isNGO,
+    };
 
     try {
       const res = await fetch('http://localhost:5000/api/requests', {
@@ -30,13 +56,13 @@ const RequestForm = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
 
       if (res.ok) {
-        alert('✅ Request submitted successfully!');
+        alert('Request submitted successfully!');
         navigate('/my-requests');
       } else {
         alert(data.message || 'Failed to submit request');
@@ -48,88 +74,69 @@ const RequestForm = () => {
   };
 
   return (
-    <div className="container mt-5 mb-5">
-      <div className="card shadow p-4">
-        <h2 className="text-center mb-4">🆘 Request Help</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="mb-3">
-            <label className="form-label">Title</label>
-            <input
-              type="text"
-              name="title"
-              className="form-control"
-              value={formData.title}
-              onChange={handleChange}
-              placeholder="e.g., Need Blood Group A+"
-              required
-            />
-          </div>
+    <div className="request-wrapper">
+      <div className="request-container">
+        <div className="request-card shadow">
+          <h2 className="text-center mb-4">Submit Help Request</h2>
+          <form onSubmit={handleSubmit}>
+            <div className="mb-3">
+              <label className="form-label">Item Needed</label>
+              <input
+                type="text"
+                name="item"
+                className="form-control"
+                value={formData.item}
+                onChange={handleChange}
+                placeholder="e.g., Blankets, Food Packets"
+                required
+              />
+            </div>
 
-          <div className="mb-3">
-            <label className="form-label">Description</label>
-            <textarea
-              name="description"
-              className="form-control"
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Explain the need clearly..."
-              rows="3"
-              required
-            ></textarea>
-          </div>
+            <div className="mb-3">
+              <label className="form-label">Urgency</label>
+              <select
+                name="urgency"
+                className="form-select"
+                value={formData.urgency}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Select urgency level</option>
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
 
-          <div className="mb-3">
-            <label className="form-label">Category</label>
-            <select
-              name="category"
-              className="form-select"
-              value={formData.category}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Select Category</option>
-              <option value="Blood">Blood</option>
-              <option value="Food">Food</option>
-              <option value="Clothes">Clothes</option>
-              <option value="Books">Books</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
+            <div className="mb-3">
+              <label className="form-label">Quantity</label>
+              <input
+                type="number"
+                name="quantity"
+                className="form-control"
+                value={formData.quantity}
+                onChange={handleChange}
+                min="1"
+                required
+              />
+            </div>
 
-          <div className="mb-3">
-            <label className="form-label">Urgency</label>
-            <select
-              name="urgency"
-              className="form-select"
-              value={formData.urgency}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Select urgency level</option>
-              <option value="Low">Low</option>
-              <option value="Moderate">Moderate</option>
-              <option value="High">High</option>
-              <option value="Critical">Critical</option>
-            </select>
-          </div>
+            <div className="mb-3 form-check">
+              <input
+                type="checkbox"
+                name="isNGO"
+                className="form-check-input"
+                checked={formData.isNGO}
+                onChange={handleChange}
+              />
+              <label className="form-check-label">Requesting as an NGO</label>
+            </div>
 
-          <div className="mb-4">
-            <label className="form-label">Contact Info</label>
-            <input
-              type="text"
-              name="contact"
-              className="form-control"
-              value={formData.contact}
-              onChange={handleChange}
-              placeholder="Phone, Email or Address"
-              required
-            />
-          </div>
-
-          <button type="submit" className="btn btn-primary w-100">
-            Submit Request
-          </button>
-        </form>
+            <button type="submit" className="btn btn-primary w-100">
+              Submit Request
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );

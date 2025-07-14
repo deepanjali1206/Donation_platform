@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './Login.css';
+import './Login.css'; // Reuse your styles here
 import { useNavigate } from 'react-router-dom';
 
 const Register = () => {
@@ -19,9 +19,32 @@ const Register = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Registered Successfully:', formData);
+
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert('Registered successfully!');
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('userName', data.user.name);
+        localStorage.setItem('userId', data.user.id);
+        localStorage.setItem('userRole', data.user.role);
+        navigate('/'); // or navigate('/Login') if you want them to login after register
+      } else {
+        alert(data.message || 'Registration failed');
+      }
+    } catch (err) {
+      console.error('Registration error:', err);
+      alert('Server error. Please try again later.');
+    }
   };
 
   return (
@@ -31,7 +54,6 @@ const Register = () => {
           <div className="col-12 col-md-10 col-lg-10">
             <div className="card text-black" style={{ borderRadius: '1rem', height: '100%' }}>
               <div className="row h-100 g-0">
-              
                 <div className="col-md-6 d-flex align-items-center">
                   <div className="card-body p-md-5 mx-md-4 w-100">
                     <div className="text-center">
@@ -46,9 +68,7 @@ const Register = () => {
                     </div>
 
                     <form onSubmit={handleSubmit}>
-                      <p>
-                        <b>Create your Account</b>
-                      </p>
+                      <p><b>Create your Account</b></p>
 
                       <div className="form-outline mb-4">
                         <input
@@ -100,10 +120,7 @@ const Register = () => {
                       </div>
 
                       <div className="text-center pt-1 mb-5 pb-1">
-                        <button
-                          className="btn btn-primary btn-block gradient-custom-2 mb-3"
-                          type="submit"
-                        >
+                        <button className="btn btn-primary btn-block gradient-custom-2 mb-3" type="submit">
                           Register
                         </button>
                       </div>
@@ -111,11 +128,7 @@ const Register = () => {
 
                     <div className="d-flex align-items-center justify-content-center pb-4">
                       <p className="mb-0 me-2">Already have an account?</p>
-                      <button
-                        type="button"
-                        className="btn btn-outline-primary"
-                        onClick={() => navigate('/Login')}
-                      >
+                      <button type="button" className="btn btn-outline-primary" onClick={() => navigate('/Login')}>
                         Login
                       </button>
                     </div>

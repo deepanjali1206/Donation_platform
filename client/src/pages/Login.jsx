@@ -1,14 +1,50 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './Login.css';
 import { useNavigate } from 'react-router-dom';
 
-
 const Login = () => {
-    const navigate=useNavigate();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
+
+  const handleChange = (e) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Login Successfully');
+
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        // Save token and user info
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('userName', data.user.name);
+        localStorage.setItem('userId', data.user.id);
+        localStorage.setItem('userRole', data.user.role);
+
+        alert('Login successful!');
+        navigate('/'); // Change this to your actual dashboard or home route
+      } else {
+        alert(data.message || 'Invalid login credentials');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('Server error. Please try again later.');
+    }
   };
 
   return (
@@ -18,10 +54,8 @@ const Login = () => {
           <div className="col-xl-10">
             <div className="card rounded-3 text-black">
               <div className="row g-0">
-             
                 <div className="col-lg-6">
                   <div className="card-body p-md-5 mx-md-4">
-
                     <div className="text-center">
                       <img
                         src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/lotus.webp"
@@ -37,23 +71,25 @@ const Login = () => {
                       <div className="form-outline mb-4">
                         <input
                           type="email"
-                          id="form2Example11"
+                          name="email"
                           className="form-control"
-                          placeholder="Username"
+                          placeholder="Enter Email"
+                          value={formData.email}
+                          onChange={handleChange}
                           required
                         />
-                        <label className="form-label" htmlFor="form2Example11"></label>
                       </div>
 
                       <div className="form-outline mb-4">
                         <input
                           type="password"
-                          id="form2Example22"
+                          name="password"
                           className="form-control"
                           placeholder='Password'
+                          value={formData.password}
+                          onChange={handleChange}
                           required
                         />
-                        <label className="form-label" htmlFor="form2Example22"></label>
                       </div>
 
                       <div className="text-center pt-1 mb-5 pb-1">
@@ -63,25 +99,23 @@ const Login = () => {
                         >
                           Log in
                         </button>
-                        <a className="text-muted" href="#!">Forgot password?</a>
                       </div>
 
                       <div className="d-flex align-items-center justify-content-center pb-4">
                         <p className="mb-0 me-2">Don't have an account?</p>
-                        <button type="button" className="btn btn-outline-danger" onClick={()=>navigate('/Register')}>Create new </button>
+                        <button type="button" className="btn btn-outline-danger" onClick={() => navigate('/Register')}>Create new</button>
                       </div>
                     </form>
 
                   </div>
                 </div>
 
-              
                 <div className="col-lg-6 d-flex align-items-center gradient-custom-2">
                   <div className="text-white px-3 py-4 p-md-5 mx-md-4">
-                    <h4 className="mb-4">A Smarter Way to Give & Recieve</h4>
+                    <h4 className="mb-4">A Smarter Way to Give & Receive</h4>
                     <p className="small mb-3">
-                   CircleAid Connect empowers communities with intelligent tools to donate or request resources. 
-                    Through map-based matching and a gamified reward system, we’re building a future where giving is easy, transparent, and impactful
+                      CircleAid Connect empowers communities with intelligent tools to donate or request resources. 
+                      Through map-based matching and a gamified reward system, we’re building a future where giving is easy, transparent, and impactful
                     </p>
                   </div>
                 </div>
