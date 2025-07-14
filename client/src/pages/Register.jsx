@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './Login.css'; // Reuse your styles here
+import './Login.css'; 
 import { useNavigate } from 'react-router-dom';
 
 const Register = () => {
@@ -37,7 +37,7 @@ const Register = () => {
         localStorage.setItem('userName', data.user.name);
         localStorage.setItem('userId', data.user.id);
         localStorage.setItem('userRole', data.user.role);
-        navigate('/'); // or navigate('/Login') if you want them to login after register
+        navigate('/'); 
       } else {
         alert(data.message || 'Registration failed');
       }

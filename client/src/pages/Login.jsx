@@ -30,14 +30,14 @@ const Login = () => {
       const data = await res.json();
 
       if (res.ok) {
-        // Save token and user info
+        
         localStorage.setItem('token', data.token);
         localStorage.setItem('userName', data.user.name);
         localStorage.setItem('userId', data.user.id);
         localStorage.setItem('userRole', data.user.role);
 
         alert('Login successful!');
-        navigate('/'); // Change this to your actual dashboard or home route
+        navigate('/'); 
       } else {
         alert(data.message || 'Invalid login credentials');
       }
