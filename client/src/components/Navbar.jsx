@@ -15,15 +15,13 @@ function Navbar({ user }) {
           </Link>
         </div>
 
-        {/* Center - Navigation Links */}
+      
         <div className="navbar-center d-none d-lg-flex">
           <ul className="navbar-nav flex-row gap-4">
             <li className="nav-item">
               <Link className="nav-link" to="/">Home</Link>
             </li>
-            <li className="nav-item">
-              <Link className="nav-link" to="/about">About</Link>
-            </li>
+           
             <li className="nav-item">
               <Link className="nav-link" to="/donate">Donate</Link>
             </li>
@@ -36,7 +34,7 @@ function Navbar({ user }) {
           </ul>
         </div>
 
-        {/* Right - Credits (if logged in) + Auth Buttons */}
+
         <div className="navbar-right d-flex align-items-center gap-3">
           {user && (
             <div className="text-success fw-bold">

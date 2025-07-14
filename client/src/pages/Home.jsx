@@ -51,8 +51,14 @@ function Home() {
 
   return (
     <>
-      <section className="hero">
-        <div className="container">
+     
+      <section
+        className="hero"
+        style={{
+          backgroundImage: `url('https://plus.unsplash.com/premium_photo-1661962927450-d5f7c9267ca2?w=1200&auto=format&fit=crop&q=80')`,
+        }}
+      >
+        <div className="container text-white">
           <h1 className="display-4 fw-bold">Join the Giving Circle</h1>
           <p className="lead mt-3">
             CircleAid Connect helps you give and receive — books, blood, clothes, and care. A community of compassion is just one step away.
@@ -61,80 +67,139 @@ function Home() {
         </div>
       </section>
 
-      <section className="section-light">
-        <div className="container">
-          <h2 className="section-title">About CircleAid</h2>
+  
+      <section
+        className="about-section d-flex align-items-center"
+        style={{
+          backgroundImage: `url('https://plus.unsplash.com/premium_photo-1683140516842-74c378a43d76?w=1200&auto=format&fit=crop&q=80')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          minHeight: '500px',
+          position: 'relative',
+          padding: '60px 0',
+        }}
+      >
+        <div
+          className="container"
+          style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            padding: '30px',
+            borderRadius: '10px',
+            color: '#fff',
+          }}
+        >
+          <h2 className="section-title text-white">More Than Just Donations</h2>
           <p className="section-text">
-            CircleAid is a social platform where generosity meets purpose. We enable people to share books, donate blood, exchange clothes, and offer support to those in need.
+            CircleAid was founded on a simple belief: <strong>no help should go unnoticed</strong>, and no need should go unmet.
+          </p>
+          <p className="section-text">
+            Whether it’s a book gathering dust, a warm coat, or a lifesaving drop of blood — you have something valuable to offer.
+            CircleAid connects people not just through needs, but through compassion, trust, and action.
+          </p>
+          <p className="section-text">
+            Every item you share tells a story. Every life you touch becomes part of our growing circle.
           </p>
         </div>
       </section>
 
-      <section className="section-colored">
+    
+      <section
+        className="section-light py-5"
+        style={{
+          backgroundImage: `url("https://images.unsplash.com/photo-1599585183326-87b1fff61c33?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NjZ8fHdoYXQlMjB5b3UlMjBjYW4lMjBzaGFyZSUyMGRvbmF0ZXxlbnwwfHwwfHx8MA%3D%3D")`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
+      >
         <div className="container">
           <h2 className="section-title text-white">What You Can Share</h2>
-          <div className="row text-center text-white mt-4">
-            <div className="col-md-3 mb-3">
-              <h5>📚 Books</h5>
-              <p>Share knowledge and stories to inspire others.</p>
-            </div>
-            <div className="col-md-3 mb-3">
-              <h5>🩸 Blood</h5>
-              <p>Donate and save lives in critical moments.</p>
-            </div>
-            <div className="col-md-3 mb-3">
-              <h5>👕 Clothes</h5>
-              <p>Give unused clothing a new home.</p>
-            </div>
-            <div className="col-md-3 mb-3">
-              <h5>❤️ Support</h5>
-              <p>Offer emotional or material help to someone in need.</p>
-            </div>
+          <div className="row">
+            {[
+              {
+                title: "Books",
+                image: "https://cdn-icons-png.flaticon.com/512/2232/2232688.png",
+                description: "Inspire others by donating novels, textbooks, or children's stories.",
+              },
+              {
+                title: "Blood",
+                image: "https://cdn-icons-png.flaticon.com/512/2871/2871439.png",
+                description: "A single donation can save multiple lives in medical emergencies.",
+              },
+              {
+                title: "Clothes",
+                image: "https://cdn-icons-png.flaticon.com/512/892/892458.png",
+                description: "Warm someone's heart and body by giving clean, wearable clothes.",
+              },
+              {
+                title: "Support",
+                image: "https://cdn-icons-png.flaticon.com/512/2950/2950651.png",
+                description: "Offer your skills, time, or encouragement to those in emotional need.",
+              },
+            ].map((item, idx) => (
+              <div key={idx} className="col-md-3 mb-4">
+                <div className="card h-100 shadow-sm border-0 text-center">
+                  <div className="card-body d-flex flex-column align-items-center">
+                    <img src={item.image} alt={item.title} style={{ height: "64px" }} className="mb-3" />
+                    <h5 className="card-title">{item.title}</h5>
+                    <p className="card-text text-muted">{item.description}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-     
-      <section className="how-it-works py-5 bg-light">
-        <div className="container text-center">
-          <h2 className="mb-5"><span className="orange-bar" /> How It Works</h2>
+   
+      <section
+        className="how-it-works-section text-white"
+        style={{
+          backgroundImage: `url("https://images.unsplash.com/photo-1653750365234-c1c10a5bf1b4?w=1200&auto=format&fit=crop&q=80")`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          position: 'relative',
+          padding: '60px 0',
+          minHeight: '600px',
+          zIndex: 1,
+        }}
+      >
+        <div
+          className="overlay"
+          style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            width: '100%',
+            height: '100%',
+          }}
+        >
+          <div className="container text-center py-5">
+            <h2 className="mb-5 section-title">How It Works</h2>
 
-          <div className="row mb-5">
-            <div className="col-12">
-              <h4 className="fw-bold text-primary mb-4">Want to Give? Here’s How!</h4>
+            <div className="row mb-5">
+              <h4 className="fw-bold text-white mb-4">Want to Give? Here’s How!</h4>
               <div className="row">
                 {donorSteps.map((step, idx) => (
-                  <div className="col-md-3 mb-4" key={idx}>
-                    <div className="step-box p-3 border rounded bg-white h-100 shadow-sm d-flex flex-column align-items-center justify-content-between">
+                  <div key={idx} className="col-md-3 mb-4">
+                    <div className="step-box bg-white text-dark p-3 rounded shadow d-flex flex-column align-items-center">
+                      <img src={step.img} alt={step.title} style={{ height: "64px" }} className="mb-3" />
                       <h5 className="fw-bold text-center">{step.title}</h5>
-                      <img
-                        src={step.img}
-                        alt={step.title}
-                        className="img-fluid my-3"
-                        style={{ maxHeight: "80px" }}
-                      />
                       <p className="text-center">{step.description}</p>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-          </div>
 
-          <div className="row">
-            <div className="col-12">
-              <h4 className="fw-bold text-success mb-4">Need Help?</h4>
+            <div className="row">
+              <h4 className="fw-bold text-white mb-4">Need Help?</h4>
               <div className="row">
                 {requesterSteps.map((step, idx) => (
-                  <div className="col-md-3 mb-4" key={idx}>
-                    <div className="step-box p-3 border rounded bg-white h-100 shadow-sm d-flex flex-column align-items-center justify-content-between">
+                  <div key={idx} className="col-md-3 mb-4">
+                    <div className="step-box bg-white text-dark p-3 rounded shadow d-flex flex-column align-items-center">
+                      <img src={step.img} alt={step.title} style={{ height: "64px" }} className="mb-3" />
                       <h5 className="fw-bold text-center">{step.title}</h5>
-                      <img
-                        src={step.img}
-                        alt={step.title}
-                        className="img-fluid my-3"
-                        style={{ maxHeight: "80px" }}
-                      />
                       <p className="text-center">{step.description}</p>
                     </div>
                   </div>
@@ -145,6 +210,7 @@ function Home() {
         </div>
       </section>
 
+      
       <section className="contact-section bg-dark py-5">
         <div className="container text-center text-white">
           <h2 className="mb-4">Get in Touch</h2>
