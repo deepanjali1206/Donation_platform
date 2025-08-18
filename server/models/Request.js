@@ -1,32 +1,14 @@
 const mongoose = require("mongoose");
 
 const requestSchema = new mongoose.Schema({
-  item: String,
-  urgency: { type: String, enum: ["Low", "Medium", "High"], default: "Low" },
-  quantity: Number,
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-  },
-  location: {
-    type: { type: String, default: "Point" },
-    coordinates: [Number], // [longitude, latitude]
-  },
-  isNGO: {
-    type: Boolean,
-    default: false,
-  },
-  status: {
-    type: String,
-    enum: ["Active", "Fulfilled", "Cancelled"],
-    default: "Active",
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
+  item: { type: String, required: true },
+  urgency: { type: String, required: true },
+  quantity: { type: Number, required: true },
+  coordinates: { type: [Number], default: [0, 0] }, // [lng, lat]
+  isNGO: { type: Boolean, default: false },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+}, { timestamps: true });
 
-requestSchema.index({ location: "2dsphere" });
+const Request = mongoose.models.Request || mongoose.model("Request", requestSchema);
 
-module.exports = mongoose.model("Request", requestSchema);
+module.exports = Request;

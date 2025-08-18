@@ -1,75 +1,68 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import './RequestForm.css';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import "./RequestForm.css";
 
 const RequestForm = () => {
   const navigate = useNavigate();
-
   const [formData, setFormData] = useState({
-    item: '',
-    urgency: '',
-    quantity: '',
-    contact: '',
+    item: "",
+    urgency: "",
+    quantity: "",
     isNGO: false,
   });
-
   const [coordinates, setCoordinates] = useState([0, 0]); // [lng, lat]
 
-  // Get user's geolocation
+  // Geolocation
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        pos => {
-          const { latitude, longitude } = pos.coords;
-          setCoordinates([longitude, latitude]);
-        },
-        err => {
-          console.error("Geolocation error:", err.message);
-        }
+        (pos) => setCoordinates([pos.coords.longitude, pos.coords.latitude]),
+        (err) => console.error("Geolocation error:", err)
       );
     }
   }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const payload = {
-      item: formData.item,
-      urgency: formData.urgency,
+      ...formData,
       quantity: parseInt(formData.quantity) || 1,
       coordinates,
-      isNGO: formData.isNGO,
     };
 
     try {
-      const res = await fetch('http://localhost:5000/api/requests', {
-        method: 'POST',
+      const res = await fetch("http://localhost:5000/api/requests", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        const text = await res.text();
+        console.error("Response is not JSON:", text);
+        throw new Error("Server returned invalid response");
+      }
 
       if (res.ok) {
-        alert('Request submitted successfully!');
-        navigate('/my-requests');
+        alert("Request submitted successfully!");
+        navigate("/my-requests");
       } else {
-        alert(data.message || 'Failed to submit request');
+        alert(data.message || "Failed to submit request");
       }
     } catch (error) {
       console.error(error);
-      alert('Server error. Please try again later.');
+      alert("Server error. Please try again later.");
     }
   };
 
