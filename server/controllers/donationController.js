@@ -1,64 +1,47 @@
 const Donation = require("../models/Donation");
-const jwt = require("jsonwebtoken");
 
-// Create a new donation
-exports.createDonation = async (req, res) => {
+// ✅ Create a donation
+const createDonation = async (req, res) => {
   try {
-    console.log("Incoming donation request:");
-    console.log("Headers:", req.headers);
-    console.log("Body:", req.body);
-    console.log("File:", req.file);
+    const { title, category, donorName, donorEmail, amount } = req.body;
 
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) return res.status(401).json({ message: "Unauthorized" });
-
-    const decoded = jwt.verify(token, process.env.JWT_secret);
-    const userId = decoded.id;
-
-    const { title, description, category, latitude, longitude, address } = req.body;
-
-    const donation = await Donation.create({
+    const donation = new Donation({
       title,
-      description,
       category,
-      address,
-      user: userId, // ✅ matches schema field
-      image: req.file ? req.file.filename : null,
-      location: {
-        type: "Point",
-        coordinates: [parseFloat(longitude), parseFloat(latitude)],
-      },
+      donorName,
+      donorEmail,
+      amount,
+      image: req.file ? `/uploads/${req.file.filename}` : "",
     });
 
-    res.status(201).json(donation);
+    await donation.save();
+    res.status(201).json({ message: "Donation saved", donation });
   } catch (err) {
-    console.error("Donation creation failed:", err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ message: "Error saving donation", error: err.message });
   }
 };
 
-// Get all donations (public)
-exports.getDonations = async (req, res) => {
+// ✅ Get all donations
+const getDonations = async (req, res) => {
   try {
-    const donations = await Donation.find().populate("user", "name email");
-    res.status(200).json(donations);
+    const donations = await Donation.find().sort({ createdAt: -1 });
+    res.json(donations);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ message: "Error fetching donations", error: err.message });
   }
 };
 
-// Get donations of logged-in user
-exports.getMyDonations = async (req, res) => {
+// ✅ Get my donations (filtered by email)
+const getMyDonations = async (req, res) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) return res.status(401).json({ message: "Unauthorized" });
+    const { email } = req.query; // frontend will pass donorEmail
+    if (!email) return res.status(400).json({ message: "Email is required" });
 
-    const decoded = jwt.verify(token, process.env.JWT_secret);
-    const userId = decoded.id;
-
-    const donations = await Donation.find({ user: userId });
-    res.status(200).json(donations);
+    const donations = await Donation.find({ donorEmail: email }).sort({ createdAt: -1 });
+    res.json(donations);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ message: "Error fetching my donations", error: err.message });
   }
 };
+
+module.exports = { createDonation, getDonations, getMyDonations };

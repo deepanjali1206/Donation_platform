@@ -8,10 +8,13 @@ const {
 
 const router = express.Router();
 
-// POST with image
-router.post("/", upload.single("image"), createDonation);
+// Create donation with file upload
+router.post("/", upload.single("file"), createDonation);
 
+// Get all donations
 router.get("/", getDonations);
+
+// Get my donations (by donorEmail)
 router.get("/me", getMyDonations);
 
 module.exports = router;

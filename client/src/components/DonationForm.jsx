@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./DonationForm.css";
 
+// Dummy campaigns – later you can fetch from backend if needed
 const campaigns = [
   { id: 1, title: "Books for Rural Schools", category: "Books" },
   { id: 2, title: "Clothes for Winter", category: "Clothes" },
@@ -11,8 +12,12 @@ const campaigns = [
 
 export default function DonationForm() {
   const { id } = useParams();
+  const navigate = useNavigate();
+
+  // Find campaign based on URL param
   const cause = campaigns.find((c) => c.id === parseInt(id));
 
+  // Initial form state
   const [form, setForm] = useState({
     title: cause ? cause.title : "",
     category: cause ? cause.category : "",
@@ -23,14 +28,17 @@ export default function DonationForm() {
 
   const [file, setFile] = useState(null);
 
+  // Handle text inputs
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  // Handle file input
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
   };
 
+  // Submit donation
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -39,23 +47,17 @@ export default function DonationForm() {
       Object.entries(form).forEach(([key, value]) =>
         formData.append(key, value)
       );
-      if (file) formData.append("file", file);
+
+      if (file) formData.append("file", file); // ✅ matches backend (upload.single("image"))
 
       await axios.post("http://localhost:5000/api/donations", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      alert("🎉 Donation submitted successfully!");
-      setForm({
-        title: cause ? cause.title : "",
-        category: cause ? cause.category : "",
-        donorName: "",
-        donorEmail: "",
-        amount: "",
-      });
-      setFile(null);
+      // ✅ Redirect after success
+      navigate("/my-donations");
     } catch (err) {
-      console.error(err);
+      console.error("Donation error:", err);
       alert("❌ Failed to submit donation.");
     }
   };
@@ -65,7 +67,6 @@ export default function DonationForm() {
       <div className="donation-card">
         <h2 className="form-title">Donate to {form.title}</h2>
         <form onSubmit={handleSubmit}>
-
           {/* Cause Title */}
           <div className="mb-3">
             <label className="form-label">Cause Title</label>
@@ -90,7 +91,7 @@ export default function DonationForm() {
             />
           </div>
 
-          {/* Name */}
+          {/* Donor Name */}
           <div className="mb-3">
             <label className="form-label">Your Name</label>
             <input
@@ -104,7 +105,7 @@ export default function DonationForm() {
             />
           </div>
 
-          {/* Email */}
+          {/* Donor Email */}
           <div className="mb-3">
             <label className="form-label">Your Email</label>
             <input
@@ -132,7 +133,7 @@ export default function DonationForm() {
             />
           </div>
 
-          {/* File */}
+          {/* File Upload */}
           <div className="mb-3">
             <label className="form-label">Upload File (optional)</label>
             <input
@@ -145,10 +146,12 @@ export default function DonationForm() {
             </p>
           </div>
 
+          {/* Submit */}
           <button type="submit" className="submit-btn">
             💝 Submit Donation
           </button>
 
+          {/* Back Link */}
           <div className="text-center mt-3">
             <Link to="/causes" className="back-link">
               ← Back to Causes
