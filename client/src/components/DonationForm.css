@@ -84,3 +84,15 @@
   color: #555;
   margin-top: 5px;
 }
+.back-link {
+  display: inline-block;
+  margin-top: 15px;
+  font-weight: 500;
+  color: #ff4f81;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.back-link:hover {
+  color: #ff884b;
+}

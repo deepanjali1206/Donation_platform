@@ -1,186 +1,161 @@
-import React, { useState } from 'react';
-import { GoogleMap, useLoadScript, Marker } from '@react-google-maps/api';
-import { useNavigate } from 'react-router-dom';
-import './DonationForm.css';
+import React, { useState } from "react";
+import { useParams, Link } from "react-router-dom";
+import axios from "axios";
+import "./DonationForm.css";
 
-const mapContainerStyle = {
-  width: '100%',
-  height: '300px',
-};
+const campaigns = [
+  { id: 1, title: "Books for Rural Schools", category: "Books" },
+  { id: 2, title: "Clothes for Winter", category: "Clothes" },
+  { id: 3, title: "Food for Needy", category: "Food" },
+];
 
-const center = {
-  lat: 27.4924,
-  lng: 77.6737,
-};
+export default function DonationForm() {
+  const { id } = useParams();
+  const cause = campaigns.find((c) => c.id === parseInt(id));
 
-const DonationForm = () => {
-  const navigate = useNavigate();
-
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    category: '',
-    image: null,
+  const [form, setForm] = useState({
+    title: cause ? cause.title : "",
+    category: cause ? cause.category : "",
+    donorName: "",
+    donorEmail: "",
+    amount: "",
   });
 
-  const [selectedLocation, setSelectedLocation] = useState(null);
-  const [selectedAddress, setSelectedAddress] = useState('');
-
-  const { isLoaded } = useLoadScript({
-    googleMapsApiKey: 'AIzaSyBZM2npfRdT_M4Hfw7mwk3jkLgvWGzglRM',
-  });
-
-  const getAddressFromLatLng = async (lat, lng) => {
-    try {
-      const res = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=AIzaSyBZM2npfRdT_M4Hfw7mwk3jkLgvWGzglRM`
-      );
-      const data = await res.json();
-      if (data.status === 'OK') {
-        setSelectedAddress(data.results[0].formatted_address);
-      } else {
-        setSelectedAddress('Address not found');
-      }
-    } catch (err) {
-      console.error(err);
-      setSelectedAddress('Error fetching address');
-    }
-  };
+  const [file, setFile] = useState(null);
 
   const handleChange = (e) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleFileChange = (e) => {
-    setFormData(prev => ({ ...prev, image: e.target.files[0] }));
+    setFile(e.target.files[0]);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!selectedLocation) return alert('Please select a location');
-
-    const submissionData = new FormData();
-    submissionData.append('title', formData.title);
-    submissionData.append('description', formData.description);
-    submissionData.append('category', formData.category);
-    submissionData.append('latitude', selectedLocation.lat);
-    submissionData.append('longitude', selectedLocation.lng);
-    submissionData.append('address', selectedAddress);
-    if (formData.image) submissionData.append('image', formData.image);
-
     try {
-      const res = await fetch('http://localhost:5000/api/donations', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: submissionData,
+      const formData = new FormData();
+      Object.entries(form).forEach(([key, value]) =>
+        formData.append(key, value)
+      );
+      if (file) formData.append("file", file);
+
+      await axios.post("http://localhost:5000/api/donations", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
-      const data = await res.json();
-      if (res.ok) {
-        alert('🎉 Donation submitted successfully!');
-        navigate('/my-donations');
-      } else {
-        alert(data.message || 'Failed to submit donation');
-      }
-    } catch (error) {
-      console.error(error);
-      alert('Server error');
+      alert("🎉 Donation submitted successfully!");
+      setForm({
+        title: cause ? cause.title : "",
+        category: cause ? cause.category : "",
+        donorName: "",
+        donorEmail: "",
+        amount: "",
+      });
+      setFile(null);
+    } catch (err) {
+      console.error(err);
+      alert("❌ Failed to submit donation.");
     }
   };
 
   return (
     <div className="donation-container">
       <div className="donation-card">
-        <h2 className="form-title">✨ Share Kindness, Spark Change</h2>
-        <form onSubmit={handleSubmit} encType="multipart/form-data">
+        <h2 className="form-title">Donate to {form.title}</h2>
+        <form onSubmit={handleSubmit}>
+
+          {/* Cause Title */}
           <div className="mb-3">
+            <label className="form-label">Cause Title</label>
             <input
               type="text"
               name="title"
+              value={form.title}
               className="form-control"
-              value={formData.title}
-              onChange={handleChange}
-              placeholder="e.g. Warm Jackets"
-              required
+              readOnly
             />
           </div>
 
+          {/* Category */}
           <div className="mb-3">
-            <textarea
-              name="description"
-              className="form-control"
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Brief description..."
-              rows="3"
-              required
-            />
-          </div>
-
-          <div className="mb-3">
-            <select
+            <label className="form-label">Category</label>
+            <input
+              type="text"
               name="category"
-              className="form-select"
-              value={formData.category}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Select Category</option>
-              <option value="Clothes">Clothes</option>
-              <option value="Books">Books</option>
-              <option value="Food">Food</option>
-              <option value="Blood">Blood</option>
-              <option value="Others">Others</option>
-            </select>
+              value={form.category}
+              className="form-control"
+              readOnly
+            />
           </div>
 
+          {/* Name */}
           <div className="mb-3">
-            {isLoaded ? (
-              <GoogleMap
-                mapContainerStyle={mapContainerStyle}
-                zoom={10}
-                center={center}
-                onClick={(e) => {
-                  const lat = e.latLng.lat();
-                  const lng = e.latLng.lng();
-                  setSelectedLocation({ lat, lng });
-                  getAddressFromLatLng(lat, lng);
-                }}
-              >
-                {selectedLocation && <Marker position={selectedLocation} />}
-              </GoogleMap>
-            ) : (
-              <p>Loading map...</p>
-            )}
+            <label className="form-label">Your Name</label>
+            <input
+              type="text"
+              name="donorName"
+              value={form.donorName}
+              onChange={handleChange}
+              className="form-control"
+              placeholder="Enter your full name"
+              required
+            />
           </div>
 
-          {selectedLocation && (
-            <div className="mb-3 text-muted">
-              📍 <strong>Location:</strong> {selectedAddress || 'Fetching address...'}
-            </div>
-          )}
+          {/* Email */}
+          <div className="mb-3">
+            <label className="form-label">Your Email</label>
+            <input
+              type="email"
+              name="donorEmail"
+              value={form.donorEmail}
+              onChange={handleChange}
+              className="form-control"
+              placeholder="you@example.com"
+              required
+            />
+          </div>
 
-          <div className="mb-4">
+          {/* Amount */}
+          <div className="mb-3">
+            <label className="form-label">Donation Amount ($)</label>
+            <input
+              type="number"
+              name="amount"
+              value={form.amount}
+              onChange={handleChange}
+              className="form-control"
+              placeholder="Enter amount"
+              required
+            />
+          </div>
+
+          {/* File */}
+          <div className="mb-3">
+            <label className="form-label">Upload File (optional)</label>
             <input
               type="file"
-              name="image"
               className="form-control"
-              accept="image/*"
               onChange={handleFileChange}
-              required
             />
+            <p className="location-info">
+              * You can attach receipt, proof, or extra info.
+            </p>
           </div>
 
-          <button type="submit" className="btn submit-btn w-100">
-            Submit Donation
+          <button type="submit" className="submit-btn">
+            💝 Submit Donation
           </button>
+
+          <div className="text-center mt-3">
+            <Link to="/causes" className="back-link">
+              ← Back to Causes
+            </Link>
+          </div>
         </form>
       </div>
     </div>
   );
-};
-
-export default DonationForm;
+}

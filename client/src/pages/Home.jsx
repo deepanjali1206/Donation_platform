@@ -52,20 +52,29 @@ function Home() {
   return (
     <>
      
-      <section
-        className="hero"
-        style={{
-          backgroundImage: `url('https://plus.unsplash.com/premium_photo-1661962927450-d5f7c9267ca2?w=1200&auto=format&fit=crop&q=80')`,
-        }}
-      >
-        <div className="container text-white">
-          <h1 className="display-4 fw-bold">Join the Giving Circle</h1>
-          <p className="lead mt-3">
-            CircleAid Connect helps you give and receive — books, blood, clothes, and care. A community of compassion is just one step away.
-          </p>
-          <Link to="/register" className="btn btn-lg btn-gradient mt-4">Get Started</Link>
-        </div>
-      </section>
+  <section
+  className="hero"
+  style={{
+    backgroundImage: `url('https://plus.unsplash.com/premium_photo-1661962927450-d5f7c9267ca2?w=1200&auto=format&fit=crop&q=80')`,
+  }}
+>
+  <div className="container text-white">
+    <h1 className="display-4 fw-bold">Join the Giving Circle</h1>
+    <p className="lead mt-3">
+      CircleAid Connect helps you give and receive — books, blood, clothes, and care. A community of compassion is just one step away.
+    </p>
+
+  
+    <div className="d-flex gap-3 mt-4">
+      <Link to="/register" className="btn btn-lg btn-gradient">
+        Get Started
+      </Link>
+      <Link to="/causes" className="btn btn-lg btn-outline-light">
+        Explore Causes
+      </Link>
+    </div>
+  </div>
+</section>
 
   
       <section
