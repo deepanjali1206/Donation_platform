@@ -2,11 +2,11 @@ import React from "react";
 
 function getImageUrl(imageUrl) {
   if (!imageUrl) return "/placeholder.png";
-  // if server saved "uploads/filename", prefix server URL
+
   if (imageUrl.startsWith("uploads")) {
     return `http://localhost:5000/${imageUrl.replace(/\\/g, "/")}`;
   }
-  return imageUrl; // already full URL
+  return imageUrl; 
 }
 
 export default function DonationCard({ d }) {

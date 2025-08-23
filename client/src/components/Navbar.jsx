@@ -8,7 +8,7 @@ function Navbar({ user }) {
     <nav className="navbar navbar-light bg-light shadow-sm py-3">
       <div className="container-fluid d-flex justify-content-between align-items-center">
 
-        {/* Left - Logo */}
+      
         <div className="navbar-left">
           <Link className="navbar-brand fw-bold fs-4 text-primary" to="/">
             🌍 CircleAid

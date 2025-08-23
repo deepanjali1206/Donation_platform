@@ -1,5 +1,7 @@
+// server/routes/donationRoutes.js
 const express = require("express");
 const upload = require("../middlewares/upload");
+const auth = require("../middlewares/auth");
 const {
   createDonation,
   getDonations,
@@ -8,13 +10,13 @@ const {
 
 const router = express.Router();
 
-// Create donation with file upload
-router.post("/", upload.single("file"), createDonation);
+// Create donation (public) with file upload; field name is "image"
+router.post("/", upload.single("image"), createDonation);
 
-// Get all donations
+// Public: get all donations
 router.get("/", getDonations);
 
-// Get my donations (by donorEmail)
-router.get("/me", getMyDonations);
+// Private: get my donations (by email in token)
+router.get("/me", auth, getMyDonations);
 
 module.exports = router;

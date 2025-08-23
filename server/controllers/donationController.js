@@ -1,46 +1,53 @@
+// server/controllers/donationController.js
 const Donation = require("../models/Donation");
 
-// ✅ Create a donation
 const createDonation = async (req, res) => {
   try {
     const { title, category, donorName, donorEmail, amount } = req.body;
+
+    if (!title || !category || !donorName || !donorEmail || !amount) {
+      return res.status(400).json({ message: "All required fields must be provided" });
+    }
 
     const donation = new Donation({
       title,
       category,
       donorName,
       donorEmail,
-      amount,
-      image: req.file ? `/uploads/${req.file.filename}` : "",
+      amount: Number(amount),
+      image: req.file ? req.file.filename : "", // store filename only
     });
 
     await donation.save();
-    res.status(201).json({ message: "Donation saved", donation });
+    return res.status(201).json({ message: "Donation saved", donation });
   } catch (err) {
-    res.status(500).json({ message: "Error saving donation", error: err.message });
+    console.error("createDonation error:", err);
+    return res.status(500).json({ message: "Error saving donation", error: err.message });
   }
 };
 
-// ✅ Get all donations
 const getDonations = async (req, res) => {
   try {
     const donations = await Donation.find().sort({ createdAt: -1 });
-    res.json(donations);
+    return res.json(donations);
   } catch (err) {
-    res.status(500).json({ message: "Error fetching donations", error: err.message });
+    console.error("getDonations error:", err);
+    return res.status(500).json({ message: "Error fetching donations", error: err.message });
   }
 };
 
-// ✅ Get my donations (filtered by email)
 const getMyDonations = async (req, res) => {
   try {
-    const { email } = req.query; // frontend will pass donorEmail
-    if (!email) return res.status(400).json({ message: "Email is required" });
+    const email = req.user?.email; // <- comes from JWT
+    if (!email) {
+      return res.status(401).json({ message: "Unauthorized: email not found in token" });
+    }
 
     const donations = await Donation.find({ donorEmail: email }).sort({ createdAt: -1 });
-    res.json(donations);
+    return res.json(donations);
   } catch (err) {
-    res.status(500).json({ message: "Error fetching my donations", error: err.message });
+    console.error("getMyDonations error:", err);
+    return res.status(500).json({ message: "Error fetching my donations", error: err.message });
   }
 };
 

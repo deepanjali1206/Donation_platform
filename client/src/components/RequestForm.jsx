@@ -12,7 +12,7 @@ const RequestForm = () => {
   });
   const [coordinates, setCoordinates] = useState([0, 0]); // [lng, lat]
 
-  // Geolocation
+  
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(

@@ -1,3 +1,4 @@
+// server/controllers/authController.js
 const User = require("../models/User");
 const { hashPassword, comparePassword } = require("../utils/hash");
 const { signToken } = require("../utils/jwt");
@@ -19,7 +20,10 @@ exports.register = async (req, res) => {
       password: hashedPassword,
       role,
     });
-    const token = signToken({ id: user._id, role: user.role });
+
+    // ✅ include email in the token payload
+    const token = signToken({ id: user._id, role: user.role, email: user.email });
+
     res.status(201).json({
       message: "User registered successfully.",
       user: {
@@ -51,7 +55,10 @@ exports.login = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials." });
     }
-    const token = signToken({ id: user._id, role: user.role });
+
+    // ✅ include email in the token payload
+    const token = signToken({ id: user._id, role: user.role, email: user.email });
+
     res.json({
       message: "Login successful.",
       user: {
