@@ -1,4 +1,3 @@
-// server/models/Donation.js
 const mongoose = require("mongoose");
 
 const donationSchema = new mongoose.Schema(
@@ -7,8 +6,21 @@ const donationSchema = new mongoose.Schema(
     category: { type: String, required: true },
     donorName: { type: String, required: true },
     donorEmail: { type: String, required: true },
-    amount: { type: Number, required: true },
-    image: { type: String, default: "" }, // store filename only
+
+    // Money donation
+    amount: { type: Number },
+
+    // Item donation
+    quantity: { type: Number },
+    notes: { type: String },
+
+    donationType: {
+      type: String,
+      enum: ["money", "item"],
+      required: true,
+    },
+
+    image: { type: String, default: "" }, // filename
     status: {
       type: String,
       enum: ["Pending", "Processing", "Delivered"],

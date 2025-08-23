@@ -1,32 +1,48 @@
 import React from "react";
 
-function getImageUrl(imageUrl) {
-  if (!imageUrl) return "/placeholder.png";
-
-  if (imageUrl.startsWith("uploads")) {
-    return `http://localhost:5000/${imageUrl.replace(/\\/g, "/")}`;
-  }
-  return imageUrl; 
-}
-
-export default function DonationCard({ d }) {
+export default function DonationCard({ donation }) {
   return (
-    <article className="donation-card">
-      <div className="thumb">
-        <img src={getImageUrl(d.imageUrl)} alt={d.title} loading="lazy" />
-      </div>
-      <div className="content">
-        <div className="chip">{d.category || "General"}</div>
-        <h3 title={d.title}>{d.title}</h3>
-        <p className="desc">{d.description || "—"}</p>
-        <div className="meta">
-          <span>{new Date(d.createdAt || d.date).toLocaleDateString()}</span>
-          <span className={`status ${d.status?.toLowerCase() || "active"}`}>
-            {d.status || "Active"}
-          </span>
-        </div>
-        {d.address && <div className="address">📍 {d.address}</div>}
-      </div>
-    </article>
+    <div className="card shadow-sm border-0 rounded-3 p-3 mb-3">
+      {/* Title */}
+      <h5 className="fw-bold text-primary">{donation.title}</h5>
+
+      {/* Description */}
+      <p className="text-muted">{donation.description}</p>
+
+      {/* Donation Info */}
+      <p className="mb-1">
+        <strong>Type:</strong> {donation.type}
+      </p>
+
+      {/* If it's a money donation */}
+      {donation.type === "money" && (
+        <p className="mb-1">
+          <strong>Amount:</strong> ₹{donation.amount}
+        </p>
+      )}
+
+      {/* If it's an item donation */}
+      {donation.type === "item" && (
+        <p className="mb-1">
+          <strong>Item:</strong> {donation.itemName} ({donation.quantity})
+        </p>
+      )}
+
+      {/* Donation Status */}
+      <p className="mb-0">
+        <strong>Status:</strong>{" "}
+        <span
+          className={`badge ${
+            donation.status === "Pending"
+              ? "bg-warning text-dark"
+              : donation.status === "Approved"
+              ? "bg-info"
+              : "bg-success"
+          }`}
+        >
+          {donation.status}
+        </span>
+      </p>
+    </div>
   );
 }
