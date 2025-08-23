@@ -86,7 +86,6 @@ function MyDonations() {
                   {d.category}
                 </p>
 
-                {/* Donation details */}
                 {d.donationType === "money" ? (
                   <p className="text-sm text-green-600 font-medium">
                     💵 Donated ${d.amount}

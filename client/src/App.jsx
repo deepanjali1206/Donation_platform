@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Navbar from './components/Navbar';
@@ -10,9 +10,14 @@ import MyDonations from './pages/MyDonations';
 import MyRequests from "./components/MyRequests";
 import ContactPage from './pages/ContactPage';
 import CausePage from './pages/CausePage';   
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminRoute from './routes/AdminRoute';
+import AdminNavbar from './components/admin/AdminNavbar';  
 
 function App() {
   const [user, setUser] = useState(null);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("circleUser"));
@@ -21,9 +26,21 @@ function App() {
     }
   }, []);
 
+  const handleLogout = () => {
+    localStorage.removeItem("circleUser");
+    localStorage.removeItem("token");
+    setUser(null);
+    navigate("/");
+  };
+
+  const isAdminPath = location.pathname.startsWith("/admin");
+
   return (
     <>
-      <Navbar user={user} /> 
+     
+      {!isAdminPath && <Navbar user={user} onLogout={handleLogout} />}
+      {isAdminPath && <AdminNavbar user={user} onLogout={handleLogout} />}
+
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login setUser={setUser} />} /> 
@@ -34,7 +51,16 @@ function App() {
         <Route path="/causes" element={<CausePage />} />  
         <Route path="/my-donations" element={<MyDonations />} />
         <Route path="/my-requests" element={<MyRequests />} />
-          <Route path="/donate/:id" element={<DonationForm />} />
+        <Route path="/donate/:id" element={<DonationForm />} />
+
+        <Route 
+          path="/admin/dashboard" 
+          element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
+          } 
+        />
       </Routes>
     </>
   );

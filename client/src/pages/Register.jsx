@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
-import './Login.css'; 
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import "./Login.css"; 
+import { useNavigate } from "react-router-dom";
 
-const Register = () => {
+const Register = ({ setUser }) => {
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    role: 'Donor',
+    name: "",
+    email: "",
+    password: "",
+    role: "user", 
   });
+
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -21,45 +24,57 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:5000/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("http://localhost:5000/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
       const data = await res.json();
 
       if (res.ok) {
-        alert('Registered successfully!');
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('userName', data.user.name);
-        localStorage.setItem('userId', data.user.id);
-        localStorage.setItem('userRole', data.user.role);
-        navigate('/'); 
+        
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("circleUser", JSON.stringify(data.user));
+
+        if (setUser) setUser(data.user);
+
+        alert("Registered successfully! 🎉");
+        navigate("/");
       } else {
-        alert(data.message || 'Registration failed');
+        alert(data.message || "Registration failed. Try again.");
       }
     } catch (err) {
-      console.error('Registration error:', err);
-      alert('Server error. Please try again later.');
+      console.error("Registration error:", err);
+      alert("⚠️ Server error. Please try again later.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <section className="gradient-form" style={{ backgroundColor: '#eee', height: '100vh' }}>
+    <section
+      className="gradient-form"
+      style={{ backgroundColor: "#eee", minHeight: "100vh" }}
+    >
       <div className="container py-5 h-100">
         <div className="row justify-content-center align-items-center h-100">
           <div className="col-12 col-md-10 col-lg-10">
-            <div className="card text-black" style={{ borderRadius: '1rem', height: '100%' }}>
+            <div
+              className="card text-black"
+              style={{ borderRadius: "1rem", height: "100%" }}
+            >
               <div className="row h-100 g-0">
+     
                 <div className="col-md-6 d-flex align-items-center">
                   <div className="card-body p-md-5 mx-md-4 w-100">
                     <div className="text-center">
                       <img
                         src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/lotus.webp"
-                        style={{ width: '185px' }}
+                        style={{ width: "185px" }}
                         alt="logo"
                       />
                       <h4 className="mt-1 mb-5 pb-1">
@@ -68,7 +83,9 @@ const Register = () => {
                     </div>
 
                     <form onSubmit={handleSubmit}>
-                      <p><b>Create your Account</b></p>
+                      <p>
+                        <b>Create your Account</b>
+                      </p>
 
                       <div className="form-outline mb-4">
                         <input
@@ -103,32 +120,30 @@ const Register = () => {
                           value={formData.password}
                           onChange={handleChange}
                           required
+                          minLength={6}
                         />
                       </div>
 
-                      <div className="form-outline mb-4">
-                        <select
-                          name="role"
-                          className="form-select"
-                          value={formData.role}
-                          onChange={handleChange}
-                        >
-                          <option value="Donor">Donor</option>
-                          <option value="Receiver">Receiver</option>
-                          <option value="NGO">NGO</option>
-                        </select>
-                      </div>
+                      <input type="hidden" name="role" value="user" />
 
                       <div className="text-center pt-1 mb-5 pb-1">
-                        <button className="btn btn-primary btn-block gradient-custom-2 mb-3" type="submit">
-                          Register
+                        <button
+                          className="btn btn-primary btn-block gradient-custom-2 mb-3"
+                          type="submit"
+                          disabled={loading}
+                        >
+                          {loading ? "Registering..." : "Register"}
                         </button>
                       </div>
                     </form>
 
                     <div className="d-flex align-items-center justify-content-center pb-4">
                       <p className="mb-0 me-2">Already have an account?</p>
-                      <button type="button" className="btn btn-outline-primary" onClick={() => navigate('/Login')}>
+                      <button
+                        type="button"
+                        className="btn btn-outline-primary"
+                        onClick={() => navigate("/login")}
+                      >
                         Login
                       </button>
                     </div>
@@ -139,9 +154,10 @@ const Register = () => {
                   <div className="px-3 py-4 p-md-5 mx-md-4">
                     <h4 className="mb-4">Be the reason someone smiles today</h4>
                     <p className="small mb-0">
-                      CircleAid Connect enables you to easily contribute or request resources like
-                      books, blood, clothes, and more. With every action, you help build a stronger,
-                      more compassionate community.
+                      CircleAid Connect enables you to easily contribute or
+                      request resources like books, blood, clothes, and more.
+                      With every action, you help build a stronger, more
+                      compassionate community.
                     </p>
                   </div>
                 </div>

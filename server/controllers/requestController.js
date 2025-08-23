@@ -19,7 +19,7 @@ exports.createRequest = async (req, res) => {
       isNGO,
       location: {
         type: "Point",
-        coordinates: coordinates.map(Number), // [lng, lat]
+        coordinates: coordinates.map(Number), 
       },
     });
 

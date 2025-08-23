@@ -19,7 +19,6 @@ const createDonation = async (req, res) => {
         .json({ message: "All required fields must be provided" });
     }
 
-    // validate based on type
     if (donationType === "money" && !amount) {
       return res.status(400).json({ message: "Amount is required for money donation" });
     }

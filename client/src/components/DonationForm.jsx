@@ -1,4 +1,4 @@
-// src/components/DonationForm.jsx
+
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -15,7 +15,6 @@ export default function DonationForm() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // get logged-in user to prefill donorEmail
   const [currentUser, setCurrentUser] = useState(null);
   useEffect(() => {
     try {
@@ -34,7 +33,7 @@ export default function DonationForm() {
     amount: "",
     quantity: "",
     notes: "",
-    donationType: "money", // default is money
+    donationType: "money", 
   });
 
   useEffect(() => {
@@ -77,7 +76,7 @@ export default function DonationForm() {
       <div className="donation-card">
         <h2 className="form-title">Donate to {form.title}</h2>
         <form onSubmit={handleSubmit}>
-          {/* Cause Info */}
+       
           <div className="mb-3">
             <label className="form-label">Cause Title</label>
             <input
@@ -100,7 +99,6 @@ export default function DonationForm() {
             />
           </div>
 
-          {/* Donor Info */}
           <div className="mb-3">
             <label className="form-label">Your Name</label>
             <input
@@ -128,7 +126,6 @@ export default function DonationForm() {
             />
           </div>
 
-          {/* Donation Type Selector */}
           <div className="mb-3">
             <label className="form-label">Donation Type</label>
             <select
@@ -142,7 +139,6 @@ export default function DonationForm() {
             </select>
           </div>
 
-          {/* Show fields based on donation type */}
           {form.donationType === "money" ? (
             <div className="mb-3">
               <label className="form-label">Donation Amount ($)</label>
@@ -184,7 +180,6 @@ export default function DonationForm() {
             </>
           )}
 
-          {/* File Upload */}
           <div className="mb-3">
             <label className="form-label">Upload File (optional)</label>
             <input

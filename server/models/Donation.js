@@ -7,10 +7,8 @@ const donationSchema = new mongoose.Schema(
     donorName: { type: String, required: true },
     donorEmail: { type: String, required: true },
 
-    // Money donation
     amount: { type: Number },
 
-    // Item donation
     quantity: { type: Number },
     notes: { type: String },
 
@@ -20,7 +18,7 @@ const donationSchema = new mongoose.Schema(
       required: true,
     },
 
-    image: { type: String, default: "" }, // filename
+    image: { type: String, default: "" }, 
     status: {
       type: String,
       enum: ["Pending", "Processing", "Delivered"],

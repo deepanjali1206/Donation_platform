@@ -1,0 +1,52 @@
+
+.admin-navbar {
+  background: linear-gradient(90deg, #1e293b, #0f172a); /* Dark gradient */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  padding: 0.6rem 1.2rem;
+  border-bottom: 2px solid #ff4f81;
+}
+
+.admin-navbar .navbar-brand {
+  color: #ff4f81 !important;
+  font-weight: bold;
+  letter-spacing: 0.7px;
+  transition: 0.3s ease;
+}
+
+.admin-navbar .navbar-brand:hover {
+  color: #ff884b !important;
+}
+
+.admin-navbar .nav-link {
+  color: #e5e7eb !important;
+  font-weight: 500;
+  transition: color 0.3s ease, transform 0.2s;
+}
+
+.admin-navbar .nav-link:hover {
+  color: #ff4f81 !important;
+  transform: scale(1.05);
+}
+
+.admin-navbar .btn {
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.admin-navbar .btn-danger {
+  background: linear-gradient(to right, #ff4f81, #ff884b);
+  border: none;
+  color: #fff;
+}
+
+.admin-navbar .btn-danger:hover {
+  background: linear-gradient(to right, #ff884b, #ff4f81);
+}
+
+@media (max-width: 991px) {
+  .admin-navbar .navbar-center {
+    display: none !important;
+  }
+}

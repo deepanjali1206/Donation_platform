@@ -10,7 +10,7 @@ const RequestForm = () => {
     quantity: "",
     isNGO: false,
   });
-  const [coordinates, setCoordinates] = useState([0, 0]); // [lng, lat]
+  const [coordinates, setCoordinates] = useState([0, 0]); 
 
   
   useEffect(() => {
