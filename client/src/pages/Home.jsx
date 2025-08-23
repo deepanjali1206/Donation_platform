@@ -69,7 +69,7 @@ function Home() {
       <Link to="/register" className="btn btn-lg btn-gradient">
         Get Started
       </Link>
-      <Link to="/causes" className="btn btn-lg btn-outline-light">
+      <Link to="/causes" className="btn btn-lg btn-gradient">
         Explore Causes
       </Link>
     </div>

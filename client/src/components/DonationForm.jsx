@@ -8,13 +8,14 @@ const campaigns = [
   { id: 1, title: "Books for Rural Schools", category: "Books" },
   { id: 2, title: "Clothes for Winter", category: "Clothes" },
   { id: 3, title: "Food for Needy", category: "Food" },
+  { id: 4, title: "Blood Donation Drive", category: "Blood" },
 ];
 
 export default function DonationForm() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // get logged-in user to prefill donorEmail (helps match /me)
+  // get logged-in user to prefill donorEmail
   const [currentUser, setCurrentUser] = useState(null);
   useEffect(() => {
     try {
@@ -31,6 +32,9 @@ export default function DonationForm() {
     donorName: "",
     donorEmail: "",
     amount: "",
+    quantity: "",
+    notes: "",
+    donationType: "money", // default is money
   });
 
   useEffect(() => {
@@ -55,7 +59,6 @@ export default function DonationForm() {
       const formData = new FormData();
       Object.entries(form).forEach(([k, v]) => formData.append(k, v));
 
-      // ✅ MUST be "image" to match upload.single("image")
       if (file) formData.append("image", file);
 
       await axios.post("http://localhost:5000/api/donations", formData, {
@@ -74,16 +77,30 @@ export default function DonationForm() {
       <div className="donation-card">
         <h2 className="form-title">Donate to {form.title}</h2>
         <form onSubmit={handleSubmit}>
+          {/* Cause Info */}
           <div className="mb-3">
             <label className="form-label">Cause Title</label>
-            <input type="text" name="title" value={form.title} className="form-control" readOnly />
+            <input
+              type="text"
+              name="title"
+              value={form.title}
+              className="form-control"
+              readOnly
+            />
           </div>
 
           <div className="mb-3">
             <label className="form-label">Category</label>
-            <input type="text" name="category" value={form.category} className="form-control" readOnly />
+            <input
+              type="text"
+              name="category"
+              value={form.category}
+              className="form-control"
+              readOnly
+            />
           </div>
 
+          {/* Donor Info */}
           <div className="mb-3">
             <label className="form-label">Your Name</label>
             <input
@@ -107,33 +124,87 @@ export default function DonationForm() {
               className="form-control"
               placeholder="you@example.com"
               required
-              readOnly={Boolean(currentUser?.email)} // prevent mismatch
+              readOnly={Boolean(currentUser?.email)}
             />
           </div>
 
+          {/* Donation Type Selector */}
           <div className="mb-3">
-            <label className="form-label">Donation Amount ($)</label>
-            <input
-              type="number"
-              name="amount"
-              value={form.amount}
+            <label className="form-label">Donation Type</label>
+            <select
+              name="donationType"
+              value={form.donationType}
               onChange={handleChange}
-              className="form-control"
-              placeholder="Enter amount"
-              required
-            />
+              className="form-select"
+            >
+              <option value="money">Money</option>
+              <option value="item">Item (Books, Clothes, Food, etc.)</option>
+            </select>
           </div>
 
+          {/* Show fields based on donation type */}
+          {form.donationType === "money" ? (
+            <div className="mb-3">
+              <label className="form-label">Donation Amount ($)</label>
+              <input
+                type="number"
+                name="amount"
+                value={form.amount}
+                onChange={handleChange}
+                className="form-control"
+                placeholder="Enter amount"
+                required
+              />
+            </div>
+          ) : (
+            <>
+              <div className="mb-3">
+                <label className="form-label">Quantity</label>
+                <input
+                  type="number"
+                  name="quantity"
+                  value={form.quantity}
+                  onChange={handleChange}
+                  className="form-control"
+                  placeholder="Enter number of items"
+                  required
+                />
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label">Notes</label>
+                <textarea
+                  name="notes"
+                  value={form.notes}
+                  onChange={handleChange}
+                  className="form-control"
+                  placeholder="Describe the items you want to donate"
+                />
+              </div>
+            </>
+          )}
+
+          {/* File Upload */}
           <div className="mb-3">
             <label className="form-label">Upload File (optional)</label>
-            <input type="file" className="form-control" onChange={handleFileChange} />
-            <p className="location-info">* You can attach receipt, proof, or extra info.</p>
+            <input
+              type="file"
+              className="form-control"
+              onChange={handleFileChange}
+            />
+            <p className="location-info">
+              * You can attach receipt, proof, or extra info.
+            </p>
           </div>
 
-          <button type="submit" className="submit-btn">💝 Submit Donation</button>
+          <button type="submit" className="submit-btn">
+            💝 Submit Donation
+          </button>
 
           <div className="text-center mt-3">
-            <Link to="/causes" className="back-link">← Back to Causes</Link>
+            <Link to="/causes" className="back-link">
+              ← Back to Causes
+            </Link>
           </div>
         </form>
       </div>
