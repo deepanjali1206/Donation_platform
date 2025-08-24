@@ -11,31 +11,65 @@ const createDonation = async (req, res) => {
       quantity,
       notes,
       donationType,
+      bloodGroup,
+      date,
+      location,
+      transactionId,
     } = req.body;
 
-    if (!title || !category || !donorName || !donorEmail || !donationType) {
+    // Basic validation
+    if (!donorName || !donorEmail || !donationType) {
       return res
         .status(400)
-        .json({ message: "All required fields must be provided" });
+        .json({ message: "Donor name, email and donation type are required." });
     }
 
-    if (donationType === "money" && !amount) {
-      return res.status(400).json({ message: "Amount is required for money donation" });
+    // Extra validation based on type
+    if (donationType === "money") {
+      if (!amount || Number(amount) <= 0) {
+        return res.status(400).json({ message: "Valid amount is required." });
+      }
+      if (!transactionId || String(transactionId).trim().length < 8) {
+        return res.status(400).json({
+          message: "Valid Transaction ID is required for money donations.",
+        });
+      }
     }
-    if (donationType === "item" && !quantity) {
-      return res.status(400).json({ message: "Quantity is required for item donation" });
+
+    if (donationType === "item") {
+      if (!quantity || Number(quantity) <= 0) {
+        return res.status(400).json({ message: "Quantity is required." });
+      }
+    }
+
+    if (donationType === "blood") {
+      if (!bloodGroup || !date || !location) {
+        return res.status(400).json({
+          message: "Blood group, date and location are required.",
+        });
+      }
     }
 
     const donation = new Donation({
-      title,
-      category,
+      title: title || "",
+      category: category || "",
       donorName,
       donorEmail,
+
       amount: donationType === "money" ? Number(amount) : undefined,
+      transactionId: donationType === "money" ? transactionId : undefined,
+
       quantity: donationType === "item" ? Number(quantity) : undefined,
       notes: donationType === "item" ? notes : undefined,
-      donationType,
       image: req.file ? req.file.filename : "",
+
+      bloodGroup: donationType === "blood" ? bloodGroup : undefined,
+      date: donationType === "blood" ? date : undefined,
+      location: donationType === "blood" ? location : undefined,
+
+      donationType,
+      paymentMethod: donationType === "money" ? "UPI-QR" : undefined,
+      paymentStatus: donationType === "money" ? "Unverified" : undefined,
     });
 
     await donation.save();

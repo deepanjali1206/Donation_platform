@@ -1,4 +1,3 @@
-// server/server.js
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -23,7 +22,11 @@ app.use("/api/auth", authRoutes);
 app.use("/api/donations", donationRoutes);
 app.use("/api/requests", requestRoutes);
 
-// DB connection (no deprecated options)
+// ❌ Remove these two if they exist (Razorpay no longer used):
+// const paymentRoutes = require("./routes/paymentRoutes");
+// app.use("/api/payments", paymentRoutes);
+
+// DB connection
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected"))
