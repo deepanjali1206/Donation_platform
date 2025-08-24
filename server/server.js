@@ -5,13 +5,12 @@ const dotenv = require("dotenv");
 const path = require("path");
 
 dotenv.config();
-
 const app = express();
 
 // Middleware
 app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 app.use(express.json());
-app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // serve uploaded images
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Routes
 const authRoutes = require("./routes/auth.routes");
@@ -21,10 +20,6 @@ const requestRoutes = require("./routes/requestRoutes");
 app.use("/api/auth", authRoutes);
 app.use("/api/donations", donationRoutes);
 app.use("/api/requests", requestRoutes);
-
-// ❌ Remove these two if they exist (Razorpay no longer used):
-// const paymentRoutes = require("./routes/paymentRoutes");
-// app.use("/api/payments", paymentRoutes);
 
 // DB connection
 mongoose
