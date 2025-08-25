@@ -15,7 +15,7 @@ const RequestForm = () => {
     bloodGroup: "",
     date: "",
     location: "",
-    // required by backend schema
+  
     title: "",
     category: "",
     requesterName: "",
@@ -45,10 +45,9 @@ const RequestForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // map requestType to category for backend
     const payload = {
       ...formData,
-      category: formData.requestType, // aligns with schema
+      category: formData.requestType,
       title:
         formData.requestType === "money"
           ? "Financial Assistance"
@@ -97,7 +96,7 @@ const RequestForm = () => {
           <h2 className="text-center mb-4">Submit Help Request</h2>
 
           <form onSubmit={handleSubmit}>
-            {/* Common fields */}
+          
             <div className="mb-3">
               <label className="form-label">Your Name</label>
               <input
@@ -138,7 +137,6 @@ const RequestForm = () => {
               </select>
             </div>
 
-            {/* If Item Request */}
             {formData.requestType === "item" && (
               <>
                 <div className="mb-3">
@@ -185,7 +183,6 @@ const RequestForm = () => {
               </>
             )}
 
-            {/* If Money Request */}
             {formData.requestType === "money" && (
               <>
                 <div className="mb-3">
@@ -214,7 +211,6 @@ const RequestForm = () => {
               </>
             )}
 
-            {/* If Blood Request */}
             {formData.requestType === "blood" && (
               <>
                 <div className="mb-3">
@@ -265,7 +261,6 @@ const RequestForm = () => {
               </>
             )}
 
-            {/* NGO Checkbox */}
             <div className="mb-3 form-check">
               <input
                 type="checkbox"

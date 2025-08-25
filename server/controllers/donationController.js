@@ -1,5 +1,6 @@
 const Donation = require("../models/Donation");
 
+
 const createDonation = async (req, res) => {
   try {
     const {
@@ -17,14 +18,12 @@ const createDonation = async (req, res) => {
       transactionId,
     } = req.body;
 
-    // Basic validation
     if (!donorName || !donorEmail || !donationType) {
       return res
         .status(400)
         .json({ message: "Donor name, email and donation type are required." });
     }
 
-    // Extra validation based on type
     if (donationType === "money") {
       if (!amount || Number(amount) <= 0) {
         return res.status(400).json({ message: "Valid amount is required." });
@@ -70,6 +69,9 @@ const createDonation = async (req, res) => {
       donationType,
       paymentMethod: donationType === "money" ? "UPI-QR" : undefined,
       paymentStatus: donationType === "money" ? "Unverified" : undefined,
+
+
+      status: "pending",
     });
 
     await donation.save();
@@ -82,6 +84,7 @@ const createDonation = async (req, res) => {
   }
 };
 
+
 const getDonations = async (req, res) => {
   try {
     const donations = await Donation.find().sort({ createdAt: -1 });
@@ -93,6 +96,7 @@ const getDonations = async (req, res) => {
       .json({ message: "Error fetching donations", error: err.message });
   }
 };
+
 
 const getMyDonations = async (req, res) => {
   try {
@@ -115,4 +119,34 @@ const getMyDonations = async (req, res) => {
   }
 };
 
-module.exports = { createDonation, getDonations, getMyDonations };
+
+const updateDonationStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!status || !["Pending", "Processing", "Delivered"].includes(status)) {
+      return res.status(400).json({ message: "Invalid status value" });
+    }
+
+    const donation = await Donation.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+
+    if (!donation) {
+      return res.status(404).json({ message: "Donation not found" });
+    }
+
+    res.json({ message: `Donation ${status} successfully`, donation });
+  } catch (err) {
+    console.error("updateDonationStatus error:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+module.exports = {
+  createDonation,
+  getDonations,
+  getMyDonations,
+  updateDonationStatus,
+};

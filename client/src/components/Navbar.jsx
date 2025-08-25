@@ -31,6 +31,7 @@ function Navbar({ user, onLogout }) {
           </ul>
         </div>
 
+
         <div className="navbar-right d-flex align-items-center gap-3">
           {user && (
             <div className="text-success fw-bold">
@@ -48,9 +49,35 @@ function Navbar({ user, onLogout }) {
               </Link>
             </>
           ) : (
-            <button onClick={onLogout} className="btn btn-outline-danger btn-sm">
-              Logout
-            </button>
+            <div className="dropdown">
+              <button
+                className="btn btn-outline-secondary btn-sm dropdown-toggle"
+                type="button"
+                id="userMenu"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                👤 {user.name || "Profile"}
+              </button>
+              <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                <li>
+                  <Link className="dropdown-item" to="/my-donations">
+                    📦 My Donations
+                  </Link>
+                </li>
+                <li>
+                  <Link className="dropdown-item" to="/my-requests">
+                    🙋 My Requests
+                  </Link>
+                </li>
+                <li><hr className="dropdown-divider" /></li>
+                <li>
+                  <button onClick={onLogout} className="dropdown-item text-danger">
+                    🚪 Logout
+                  </button>
+                </li>
+              </ul>
+            </div>
           )}
         </div>
       </div>

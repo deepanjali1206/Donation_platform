@@ -31,7 +31,6 @@ exports.createRequest = async (req, res) => {
       coordinates,
     } = req.body;
 
-    // ✅ Create request in DB
     const request = await Request.create({
       title,
       category,

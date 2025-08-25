@@ -8,20 +8,19 @@ const donationSchema = new mongoose.Schema(
     donorName: { type: String, required: true },
     donorEmail: { type: String, required: true },
 
-    // money donation
+  
     amount: { type: Number },
-    transactionId: { type: String }, // UPI Ref/Txn/UTR
+    transactionId: { type: String }, 
 
-    // item donation
     quantity: { type: Number },
     notes: { type: String },
     image: { type: String, default: "" },
 
-    // blood donation
+   
     bloodGroup: { type: String },
     date: { type: String },
 
-    // ⚡ instead of "location", use donationPlace
+
     donationPlace: { type: String },
 
     donationType: {
@@ -30,7 +29,7 @@ const donationSchema = new mongoose.Schema(
       required: true,
     },
 
-    // Statuses
+   
     status: {
       type: String,
       enum: ["Pending", "Processing", "Delivered"],

@@ -36,7 +36,7 @@ export default function DonationForm() {
     bloodGroup: "",
     date: "",
     location: "",
-    transactionId: "", // for QR/UPI money donations
+    transactionId: "", 
   });
 
   useEffect(() => {
@@ -55,13 +55,11 @@ export default function DonationForm() {
     setFile(e.target.files[0]);
   };
 
-  // Simple UPI reference/transaction pattern (not strict, just a nudge)
   const isLikelyTxnId = (v) => /^[A-Za-z0-9\-_.]{8,}$/.test(v?.trim() || "");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Frontend guard rails
     if (form.donationType === "money") {
       if (!form.amount || Number(form.amount) <= 0) {
         alert("⚠️ Please enter a valid amount.");
@@ -114,7 +112,7 @@ export default function DonationForm() {
         <h2 className="form-title">Donate to {form.title}</h2>
 
         <form onSubmit={handleSubmit}>
-          {/* Common Fields */}
+      
           <div className="mb-3">
             <label className="form-label">Your Name</label>
             <input
@@ -142,7 +140,6 @@ export default function DonationForm() {
             />
           </div>
 
-          {/* Donation Type Selector */}
           {cause?.category !== "Blood" && (
             <div className="mb-3">
               <label className="form-label">Donation Type</label>
@@ -158,7 +155,6 @@ export default function DonationForm() {
             </div>
           )}
 
-          {/* Money Donation */}
           {form.donationType === "money" && (
             <>
               <div className="mb-3">
@@ -175,7 +171,6 @@ export default function DonationForm() {
                 />
               </div>
 
-              {/* QR Code */}
               <div className="mb-3 text-center">
                 <p>📱 Scan this QR code to donate using UPI:</p>
                 <img
@@ -191,7 +186,6 @@ export default function DonationForm() {
                 </small>
               </div>
 
-              {/* Transaction ID */}
               <div className="mb-3">
                 <label className="form-label">Transaction ID</label>
                 <input
@@ -210,7 +204,6 @@ export default function DonationForm() {
             </>
           )}
 
-          {/* Item Donation */}
           {form.donationType === "item" && (
             <>
               <div className="mb-3">
@@ -243,7 +236,6 @@ export default function DonationForm() {
             </>
           )}
 
-          {/* Blood Donation */}
           {form.donationType === "blood" && (
             <>
               <div className="mb-3">
