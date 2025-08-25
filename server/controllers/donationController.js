@@ -71,7 +71,7 @@ const createDonation = async (req, res) => {
       paymentStatus: donationType === "money" ? "Unverified" : undefined,
 
 
-      status: "pending",
+      status: "Pending",
     });
 
     await donation.save();
