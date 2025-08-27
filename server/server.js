@@ -16,11 +16,14 @@ const authRoutes = require("./routes/auth.routes");
 const donationRoutes = require("./routes/donationRoutes");
 const requestRoutes = require("./routes/requestRoutes");
 const userRoutes = require("./routes/userRoutes");  
+const paymentsRoute = require('./routes/payments');
 
 app.use("/api/auth", authRoutes);
 app.use("/api/donations", donationRoutes);
 app.use("/api/requests", requestRoutes);
 app.use("/api/users", userRoutes);   
+app.use("/api/payments", require("./routes/payments"));
+
 
 
 mongoose

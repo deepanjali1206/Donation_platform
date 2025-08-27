@@ -4,10 +4,10 @@ import axios from "axios";
 import "./DonationForm.css";
 
 const campaigns = [
-  { id: 1, title: "Books for Rural Schools", category: "Books" },
-  { id: 2, title: "Clothes for Winter", category: "Clothes" },
-  { id: 3, title: "Food for Needy", category: "Food" },
-  { id: 4, title: "Blood Donation Drive", category: "Blood" },
+  { id: 1, title: "Books for Rural Schools", category: "item" },
+  { id: 2, title: "Clothes for Winter", category: "item" },
+  { id: 3, title: "Food for Needy", category: "item" },
+  { id: 4, title: "Blood Donation Drive", category: "blood" },
 ];
 
 export default function DonationForm() {
@@ -32,11 +32,10 @@ export default function DonationForm() {
     amount: "",
     quantity: "",
     notes: "",
-    donationType: cause?.category === "Blood" ? "blood" : "money",
+    donationType: cause?.category || "money", // ensure matches backend enum
     bloodGroup: "",
     date: "",
     location: "",
-    transactionId: "", 
   });
 
   useEffect(() => {
@@ -46,63 +45,118 @@ export default function DonationForm() {
   }, [currentUser]);
 
   const [file, setFile] = useState(null);
-
-  const handleChange = (e) => {
+  const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const handleFileChange = (e) => setFile(e.target.files[0]);
 
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
-  };
+  // Razorpay Payment
+  const handlePayment = async (e) => {
+    e.preventDefault();
+    if (!form.amount || Number(form.amount) <= 0) {
+      alert("Enter a valid amount");
+      return;
+    }
 
-  const isLikelyTxnId = (v) => /^[A-Za-z0-9\-_.]{8,}$/.test(v?.trim() || "");
+    try {
+      const { data: order } = await axios.post(
+        "http://localhost:5000/api/payments/create-order",
+        { amount: form.amount }
+      );
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY,
+        amount: order.amount,
+        currency: order.currency,
+        name: "GiveHope",
+        description: `Donation for ${form.title}`,
+        order_id: order.id,
+        handler: async function (response) {
+          const formData = new FormData();
+          Object.entries(form).forEach(([k, v]) => formData.append(k, v));
+          formData.append("razorpayPaymentId", response.razorpay_payment_id);
+          formData.append("razorpayOrderId", response.razorpay_order_id);
+          formData.append("razorpaySignature", response.razorpay_signature);
+          if (file) formData.append("image", file);
+
+          const token = localStorage.getItem("token");
+          if (!token) {
+            alert("Please login to donate.");
+            return;
+          }
+
+          await axios.post("http://localhost:5000/api/donations", formData, {
+            headers: {
+              "Content-Type": "multipart/form-data",
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          alert("✅ Donation successful!");
+          navigate("/my-donations");
+        },
+        prefill: {
+          name: form.donorName,
+          email: form.donorEmail,
+        },
+        theme: { color: "#9b87f5" },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      console.error("❌ Razorpay error:", err.response?.data || err.message);
+      alert("Payment failed. Try again!");
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (form.donationType === "money") {
-      if (!form.amount || Number(form.amount) <= 0) {
-        alert("⚠️ Please enter a valid amount.");
+    if (form.donationType !== "money") {
+      if (
+        form.donationType === "item" &&
+        (!form.quantity || Number(form.quantity) <= 0)
+      ) {
+        alert("Quantity must be greater than 0.");
         return;
       }
-      if (!isLikelyTxnId(form.transactionId)) {
-        alert("⚠️ Please enter a valid UPI Transaction / Reference ID.");
+
+      if (
+        form.donationType === "blood" &&
+        (!form.bloodGroup || !form.date || !form.location)
+      ) {
+        alert("Please fill blood group, date, and location.");
         return;
       }
-    }
 
-    if (form.donationType === "item") {
-      if (!form.quantity || Number(form.quantity) <= 0) {
-        alert("⚠️ Quantity must be greater than 0.");
-        return;
+      try {
+        const formData = new FormData();
+        Object.entries(form).forEach(([k, v]) => formData.append(k, v));
+        if (file) formData.append("image", file);
+
+        const token = localStorage.getItem("token");
+        if (!token) {
+          alert("Please login to donate.");
+          return;
+        }
+
+        await axios.post("http://localhost:5000/api/donations", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        alert("✅ Donation submitted successfully!");
+        navigate("/my-donations");
+      } catch (err) {
+        console.error("❌ Donation error:", err.response?.data || err.message);
+        const msg =
+          err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          "❌ Failed to submit donation.";
+        alert(msg);
       }
-    }
-
-    if (form.donationType === "blood") {
-      if (!form.bloodGroup || !form.date || !form.location) {
-        alert("⚠️ Please fill blood group, date and location.");
-        return;
-      }
-    }
-
-    try {
-      const formData = new FormData();
-      Object.entries(form).forEach(([k, v]) => formData.append(k, v));
-      if (file) formData.append("image", file);
-
-      await axios.post("http://localhost:5000/api/donations", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      alert("✅ Donation submitted successfully!");
-      navigate("/my-donations");
-    } catch (err) {
-      console.error("Donation error:", err);
-      const msg =
-        err?.response?.data?.message ||
-        err?.response?.data?.error ||
-        "❌ Failed to submit donation.";
-      alert(msg);
     }
   };
 
@@ -111,8 +165,8 @@ export default function DonationForm() {
       <div className="donation-card">
         <h2 className="form-title">Donate to {form.title}</h2>
 
-        <form onSubmit={handleSubmit}>
-      
+        <form>
+          {/* Name & Email */}
           <div className="mb-3">
             <label className="form-label">Your Name</label>
             <input
@@ -121,11 +175,9 @@ export default function DonationForm() {
               value={form.donorName}
               onChange={handleChange}
               className="form-control"
-              placeholder="Enter your full name"
               required
             />
           </div>
-
           <div className="mb-3">
             <label className="form-label">Your Email</label>
             <input
@@ -134,13 +186,13 @@ export default function DonationForm() {
               value={form.donorEmail}
               onChange={handleChange}
               className="form-control"
-              placeholder="you@example.com"
               required
               readOnly={Boolean(currentUser?.email)}
             />
           </div>
 
-          {cause?.category !== "Blood" && (
+          {/* Donation Type */}
+          {cause?.category !== "blood" && (
             <div className="mb-3">
               <label className="form-label">Donation Type</label>
               <select
@@ -151,59 +203,31 @@ export default function DonationForm() {
               >
                 <option value="money">Money</option>
                 <option value="item">Item (Books, Clothes, Food)</option>
+                <option value="blood">Blood</option>
               </select>
             </div>
           )}
 
+          {/* Money Donation */}
           {form.donationType === "money" && (
-            <>
-              <div className="mb-3">
-                <label className="form-label">Donation Amount (₹)</label>
-                <input
-                  type="number"
-                  name="amount"
-                  value={form.amount}
-                  onChange={handleChange}
-                  className="form-control"
-                  placeholder="Enter amount"
-                  min={1}
-                  required
-                />
-              </div>
-
-              <div className="mb-3 text-center">
-                <p>📱 Scan this QR code to donate using UPI:</p>
-                <img
-                  src="/images/upi-qr.jpg"
-                  alt="UPI QR Code"
-                  style={{ width: "200px", height: "200px", objectFit: "cover", borderRadius: 12 }}
-                />
-                <p style={{ marginTop: 8 }}>
-                  <b>UPI ID:</b> 9336273155@axl
-                </p>
-                <small>
-                  After completing payment in your UPI app, enter the Transaction ID below.
-                </small>
-              </div>
-
-              <div className="mb-3">
-                <label className="form-label">Transaction ID</label>
-                <input
-                  type="text"
-                  name="transactionId"
-                  value={form.transactionId}
-                  onChange={handleChange}
-                  className="form-control"
-                  placeholder="Enter UPI Transaction / Reference ID"
-                  required
-                />
-                <small className="text-muted">
-                  Tip: You can find it in your UPI app’s payment history (Ref/Txn/UTR).
-                </small>
-              </div>
-            </>
+            <div className="mb-3">
+              <label className="form-label">Donation Amount (₹)</label>
+              <input
+                type="number"
+                name="amount"
+                value={form.amount}
+                onChange={handleChange}
+                className="form-control"
+                min={1}
+                required
+              />
+              <button className="submit-btn mt-3" onClick={handlePayment}>
+                💳 Pay with Razorpay
+              </button>
+            </div>
           )}
 
+          {/* Item Donation */}
           {form.donationType === "item" && (
             <>
               <div className="mb-3">
@@ -214,7 +238,6 @@ export default function DonationForm() {
                   value={form.quantity}
                   onChange={handleChange}
                   className="form-control"
-                  placeholder="Enter number of items"
                   min={1}
                   required
                 />
@@ -226,16 +249,23 @@ export default function DonationForm() {
                   value={form.notes}
                   onChange={handleChange}
                   className="form-control"
-                  placeholder="Describe the items you want to donate"
                 />
               </div>
               <div className="mb-3">
                 <label className="form-label">Upload File (optional)</label>
-                <input type="file" className="form-control" onChange={handleFileChange} />
+                <input
+                  type="file"
+                  className="form-control"
+                  onChange={handleFileChange}
+                />
               </div>
+              <button className="submit-btn" onClick={handleSubmit}>
+                💝 Submit Donation
+              </button>
             </>
           )}
 
+          {/* Blood Donation */}
           {form.donationType === "blood" && (
             <>
               <div className="mb-3">
@@ -281,12 +311,11 @@ export default function DonationForm() {
                   required
                 />
               </div>
+              <button className="submit-btn" onClick={handleSubmit}>
+                💝 Submit Donation
+              </button>
             </>
           )}
-
-          <button type="submit" className="submit-btn">
-            {form.donationType === "money" ? "✅ I Have Donated" : "💝 Submit Donation"}
-          </button>
 
           <div className="text-center mt-3">
             <Link to="/causes" className="back-link">

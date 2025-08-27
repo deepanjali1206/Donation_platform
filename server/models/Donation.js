@@ -2,26 +2,38 @@ const mongoose = require("mongoose");
 
 const donationSchema = new mongoose.Schema(
   {
-    title: { type: String },
-    category: { type: String },
+    title: { type: String, trim: true },
 
-    donorName: { type: String, required: true },
-    donorEmail: { type: String, required: true },
+    category: { type: String, trim: true },
 
-  
-    amount: { type: Number },
-    transactionId: { type: String }, 
+    donorName: { type: String, required: true, trim: true },
 
-    quantity: { type: Number },
-    notes: { type: String },
+    donorEmail: {
+      type: String,
+      required: true,
+      lowercase: true,
+      trim: true,
+      match: [/.+\@.+\..+/, "Please enter a valid email"],
+    },
+
+    // For money donations
+    amount: { type: Number, min: 0 },
+    transactionId: { type: String, trim: true },
+
+    // For item donations
+    quantity: { type: Number, min: 1 },
+    notes: { type: String, trim: true },
     image: { type: String, default: "" },
 
-   
-    bloodGroup: { type: String },
-    date: { type: String },
+    // For blood donations
+    bloodGroup: {
+      type: String,
+      enum: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"],
+    },
+    date: { type: Date },
 
-
-    donationPlace: { type: String },
+    // ✅ Location is plain string, not GeoJSON
+    location: { type: String, trim: true },
 
     donationType: {
       type: String,
@@ -29,14 +41,18 @@ const donationSchema = new mongoose.Schema(
       required: true,
     },
 
-   
     status: {
       type: String,
       enum: ["Pending", "Processing", "Delivered"],
       default: "Pending",
     },
 
-    paymentMethod: { type: String },
+    paymentMethod: {
+      type: String,
+      enum: ["Cash", "Card", "UPI", "NetBanking", "Razorpay", null],
+      default: null,
+    },
+
     paymentStatus: {
       type: String,
       enum: ["Unverified", "Verified"],
@@ -46,4 +62,5 @@ const donationSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Donation", donationSchema);
+const Donation = mongoose.model("Donation", donationSchema);
+module.exports = Donation;
