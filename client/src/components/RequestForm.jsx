@@ -7,7 +7,7 @@ const RequestForm = () => {
   const [formData, setFormData] = useState({
     requestType: "",
     item: "",
-    urgency: "",
+    urgency: "Low",
     quantity: "",
     isNGO: false,
     amount: "",
@@ -15,14 +15,16 @@ const RequestForm = () => {
     bloodGroup: "",
     date: "",
     location: "",
-  
     title: "",
     category: "",
     requesterName: "",
     requesterEmail: "",
+    requesterPhone: "",
+    deliveryPreference: "",
   });
 
   const [coordinates, setCoordinates] = useState([0, 0]);
+  const [attachment, setAttachment] = useState(null);
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -42,6 +44,10 @@ const RequestForm = () => {
     }));
   };
 
+  const handleFileChange = (e) => {
+    setAttachment(e.target.files[0]);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -59,13 +65,20 @@ const RequestForm = () => {
     };
 
     try {
+      const formDataToSend = new FormData();
+      for (const key in payload) {
+        formDataToSend.append(key, payload[key]);
+      }
+      if (attachment) {
+        formDataToSend.append("attachment", attachment);
+      }
+
       const res = await fetch("http://localhost:5000/api/requests", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify(payload),
+        body: formDataToSend,
       });
 
       let data;
@@ -96,7 +109,7 @@ const RequestForm = () => {
           <h2 className="text-center mb-4">Submit Help Request</h2>
 
           <form onSubmit={handleSubmit}>
-          
+            
             <div className="mb-3">
               <label className="form-label">Your Name</label>
               <input
@@ -121,6 +134,20 @@ const RequestForm = () => {
               />
             </div>
 
+            <div className="mb-3">
+              <label className="form-label">Phone Number</label>
+              <input
+                type="tel"
+                name="requesterPhone"
+                className="form-control"
+                value={formData.requesterPhone}
+                onChange={handleChange}
+                placeholder="e.g., +91 9876543210"
+                required
+              />
+            </div>
+
+            
             <div className="mb-3">
               <label className="form-label">Request Type</label>
               <select
@@ -183,6 +210,7 @@ const RequestForm = () => {
               </>
             )}
 
+     
             {formData.requestType === "money" && (
               <>
                 <div className="mb-3">
@@ -211,6 +239,7 @@ const RequestForm = () => {
               </>
             )}
 
+          
             {formData.requestType === "blood" && (
               <>
                 <div className="mb-3">
@@ -245,22 +274,40 @@ const RequestForm = () => {
                     required
                   />
                 </div>
-
-                <div className="mb-3">
-                  <label className="form-label">Hospital / Location</label>
-                  <input
-                    type="text"
-                    name="location"
-                    className="form-control"
-                    value={formData.location}
-                    onChange={handleChange}
-                    placeholder="e.g., Apollo Hospital, Delhi"
-                    required
-                  />
-                </div>
               </>
             )}
 
+      
+            <div className="mb-3">
+              <label className="form-label">Location</label>
+              <input
+                type="text"
+                name="location"
+                className="form-control"
+                value={formData.location}
+                onChange={handleChange}
+                placeholder="e.g., Apollo Hospital, Delhi or Home Address"
+                required
+              />
+            </div>
+
+     
+            <div className="mb-3">
+              <label className="form-label">Delivery Preference</label>
+              <select
+                name="deliveryPreference"
+                className="form-select"
+                value={formData.deliveryPreference}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Select Preference</option>
+                <option value="pickup">I can pick up</option>
+                <option value="delivery">Need delivery at given location</option>
+              </select>
+            </div>
+
+          
             <div className="mb-3 form-check">
               <input
                 type="checkbox"
@@ -270,6 +317,17 @@ const RequestForm = () => {
                 onChange={handleChange}
               />
               <label className="form-check-label">Requesting as an NGO</label>
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Upload Document (optional)</label>
+              <input
+                type="file"
+                name="attachment"
+                className="form-control"
+                onChange={handleFileChange}
+                accept=".jpg,.jpeg,.png,.pdf"
+              />
             </div>
 
             <button type="submit" className="btn btn-primary w-100">

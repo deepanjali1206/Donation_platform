@@ -32,7 +32,7 @@ export default function DonationForm() {
     amount: "",
     quantity: "",
     notes: "",
-    donationType: cause?.category || "money", // ensure matches backend enum
+    donationType: cause?.category || "money", 
     bloodGroup: "",
     date: "",
     location: "",
@@ -49,7 +49,7 @@ export default function DonationForm() {
     setForm({ ...form, [e.target.name]: e.target.value });
   const handleFileChange = (e) => setFile(e.target.files[0]);
 
-  // Razorpay Payment
+  
   const handlePayment = async (e) => {
     e.preventDefault();
     if (!form.amount || Number(form.amount) <= 0) {
@@ -166,7 +166,7 @@ export default function DonationForm() {
         <h2 className="form-title">Donate to {form.title}</h2>
 
         <form>
-          {/* Name & Email */}
+        
           <div className="mb-3">
             <label className="form-label">Your Name</label>
             <input
@@ -191,7 +191,6 @@ export default function DonationForm() {
             />
           </div>
 
-          {/* Donation Type */}
           {cause?.category !== "blood" && (
             <div className="mb-3">
               <label className="form-label">Donation Type</label>
@@ -208,7 +207,7 @@ export default function DonationForm() {
             </div>
           )}
 
-          {/* Money Donation */}
+         
           {form.donationType === "money" && (
             <div className="mb-3">
               <label className="form-label">Donation Amount (₹)</label>
@@ -227,7 +226,7 @@ export default function DonationForm() {
             </div>
           )}
 
-          {/* Item Donation */}
+     
           {form.donationType === "item" && (
             <>
               <div className="mb-3">
@@ -265,7 +264,6 @@ export default function DonationForm() {
             </>
           )}
 
-          {/* Blood Donation */}
           {form.donationType === "blood" && (
             <>
               <div className="mb-3">

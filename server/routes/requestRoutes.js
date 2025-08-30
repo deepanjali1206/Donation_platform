@@ -1,18 +1,40 @@
 const express = require("express");
 const router = express.Router();
+const multer = require("multer");
+const path = require("path");
+const auth = require("../middlewares/auth");   
+
 const {
   createRequest,
   getRequests,
   getMyRequests,
+  approveRequest,
+  rejectRequest,
+  completeRequest,
+  getRequestById
 } = require("../controllers/requestController");
 
-// Create new request (auth handled inside controller via token)
-router.post("/", createRequest);
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploads/");
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + "-" + file.originalname.replace(/\s+/g, "_"));
+  },
+});
 
-// Get all requests
-router.get("/", getRequests);
+const upload = multer({ storage });
 
-// ✅ Get logged-in user's requests
-router.get("/my-requests", getMyRequests);
+
+router.post("/", auth, upload.single("attachment"), createRequest);
+router.get("/", auth, getRequests);
+router.get("/my-requests", auth, getMyRequests);
+
+
+router.put("/:id/approve", auth, approveRequest);
+router.put("/:id/reject", auth, rejectRequest);
+router.put("/:id/complete", auth, completeRequest);
+
+router.get("/:id", auth, getRequestById);
 
 module.exports = router;
