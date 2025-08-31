@@ -1,20 +1,31 @@
 import React, { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import "./DonationForm.css";
-
-const campaigns = [
-  { id: 1, title: "Books for Rural Schools", category: "item" },
-  { id: 2, title: "Clothes for Winter", category: "item" },
-  { id: 3, title: "Food for Needy", category: "item" },
-  { id: 4, title: "Blood Donation Drive", category: "blood" },
-];
 
 export default function DonationForm() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [currentUser, setCurrentUser] = useState(null);
+  const [cause, setCause] = useState(location.state?.cause || null); // ✅ prefill if passed from CausePage
+  const [form, setForm] = useState({
+    title: location.state?.cause?.title || "",
+    category: location.state?.cause?.category || "",
+    donorName: "",
+    donorEmail: "",
+    amount: "",
+    quantity: "",
+    notes: "",
+    donationType: location.state?.cause?.category || "money",
+    bloodGroup: "",
+    date: "",
+    location: "",
+  });
+  const [file, setFile] = useState(null);
+
+  // Load current user from localStorage
   useEffect(() => {
     try {
       const u = JSON.parse(localStorage.getItem("circleUser"));
@@ -22,34 +33,38 @@ export default function DonationForm() {
     } catch {}
   }, []);
 
-  const cause = campaigns.find((c) => c.id === parseInt(id, 10));
+  // Fetch the selected campaign from backend (only if not passed via state)
+  useEffect(() => {
+    if (!cause && id) {
+      const fetchCause = async () => {
+        try {
+          const res = await axios.get(`http://localhost:5000/api/campaigns/${id}`);
+          setCause(res.data);
+          setForm((f) => ({
+            ...f,
+            title: res.data.title,
+            category: res.data.category,
+            donationType: res.data.category || "money",
+          }));
+        } catch (err) {
+          console.error("Error fetching cause:", err);
+        }
+      };
+      fetchCause();
+    }
+  }, [id, cause]);
 
-  const [form, setForm] = useState({
-    title: cause ? cause.title : "",
-    category: cause ? cause.category : "",
-    donorName: "",
-    donorEmail: "",
-    amount: "",
-    quantity: "",
-    notes: "",
-    donationType: cause?.category || "money", 
-    bloodGroup: "",
-    date: "",
-    location: "",
-  });
-
+  // Autofill donor email if logged in
   useEffect(() => {
     if (currentUser?.email) {
       setForm((f) => ({ ...f, donorEmail: currentUser.email }));
     }
   }, [currentUser]);
 
-  const [file, setFile] = useState(null);
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
   const handleFileChange = (e) => setFile(e.target.files[0]);
 
-  
+  // Razorpay payment handler
   const handlePayment = async (e) => {
     e.preventDefault();
     if (!form.amount || Number(form.amount) <= 0) {
@@ -68,7 +83,7 @@ export default function DonationForm() {
         amount: order.amount,
         currency: order.currency,
         name: "GiveHope",
-        description: `Donation for ${form.title}`,
+        description: `Donation for ${form.title || "General Donation"}`,
         order_id: order.id,
         handler: async function (response) {
           const formData = new FormData();
@@ -109,22 +124,17 @@ export default function DonationForm() {
     }
   };
 
+  // Form submission for non-money donations
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (form.donationType !== "money") {
-      if (
-        form.donationType === "item" &&
-        (!form.quantity || Number(form.quantity) <= 0)
-      ) {
+      if (form.donationType === "item" && (!form.quantity || Number(form.quantity) <= 0)) {
         alert("Quantity must be greater than 0.");
         return;
       }
 
-      if (
-        form.donationType === "blood" &&
-        (!form.bloodGroup || !form.date || !form.location)
-      ) {
+      if (form.donationType === "blood" && (!form.bloodGroup || !form.date || !form.location)) {
         alert("Please fill blood group, date, and location.");
         return;
       }
@@ -160,13 +170,16 @@ export default function DonationForm() {
     }
   };
 
+  // ✅ fallback title if no campaign
+  const campaignTitle = form.title || "General Donation";
+
   return (
     <div className="donation-container">
       <div className="donation-card">
-        <h2 className="form-title">Donate to {form.title}</h2>
+        <h2 className="form-title">Donate to {campaignTitle}</h2>
 
         <form>
-        
+          {/* donor info */}
           <div className="mb-3">
             <label className="form-label">Your Name</label>
             <input
@@ -178,6 +191,7 @@ export default function DonationForm() {
               required
             />
           </div>
+
           <div className="mb-3">
             <label className="form-label">Your Email</label>
             <input
@@ -191,7 +205,8 @@ export default function DonationForm() {
             />
           </div>
 
-          {cause?.category !== "blood" && (
+          {/* donation type */}
+          {form.donationType !== "blood" && (
             <div className="mb-3">
               <label className="form-label">Donation Type</label>
               <select
@@ -207,7 +222,7 @@ export default function DonationForm() {
             </div>
           )}
 
-         
+          {/* money */}
           {form.donationType === "money" && (
             <div className="mb-3">
               <label className="form-label">Donation Amount (₹)</label>
@@ -226,7 +241,7 @@ export default function DonationForm() {
             </div>
           )}
 
-     
+          {/* item */}
           {form.donationType === "item" && (
             <>
               <div className="mb-3">
@@ -264,6 +279,7 @@ export default function DonationForm() {
             </>
           )}
 
+          {/* blood */}
           {form.donationType === "blood" && (
             <>
               <div className="mb-3">

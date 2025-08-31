@@ -38,12 +38,10 @@ function App() {
 
   return (
     <>
-      
       {!isAdminPath && <Navbar user={user} onLogout={handleLogout} />}
       {isAdminPath && <AdminNavbar user={user} onLogout={handleLogout} />}
 
       <Routes>
-        
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login setUser={setUser} />} /> 
         <Route path="/register" element={<Register setUser={setUser} />} />
@@ -53,6 +51,8 @@ function App() {
         <Route path="/causes" element={<CausePage />} />  
         <Route path="/my-donations" element={<MyDonations />} />
         <Route path="/my-requests" element={<MyRequests />} />
+
+        {/* ✅ Correct route for donating to a specific campaign */}
         <Route path="/donate/:id" element={<DonationForm />} />
 
         <Route 
