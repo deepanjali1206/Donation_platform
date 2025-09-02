@@ -1,19 +1,43 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import './Navbar.css';
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import axios from "axios";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "./Navbar.css";
 
 function Navbar({ user, onLogout }) {
+  const [credits, setCredits] = useState({ earned: 0, pending: 0 });
+
+  useEffect(() => {
+    const fetchCredits = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      try {
+        const res = await axios.get("/api/users/me/credits", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setCredits({
+          earned: res.data.earned || 0,
+          pending: res.data.pending || 0,
+        });
+      } catch (err) {
+        console.error("❌ Error fetching navbar credits:", err);
+      }
+    };
+
+    fetchCredits();
+  }, [user]); // 🔑 re-run if user logs in/out
+
   return (
     <nav className="navbar navbar-light bg-light shadow-sm py-3">
       <div className="container-fluid d-flex justify-content-between align-items-center">
-
+        {/* Left Logo */}
         <div className="navbar-left">
           <Link className="navbar-brand fw-bold fs-4 text-primary" to="/">
             🌍 CircleAid
           </Link>
         </div>
 
+        {/* Center Navigation */}
         <div className="navbar-center d-none d-lg-flex">
           <ul className="navbar-nav flex-row gap-4">
             <li className="nav-item">
@@ -31,12 +55,17 @@ function Navbar({ user, onLogout }) {
           </ul>
         </div>
 
-
+        {/* Right Section */}
         <div className="navbar-right d-flex align-items-center gap-3">
           {user && (
-            <div className="text-success fw-bold">
-              💰 {user.credits} Credits
-            </div>
+            <Link
+              to="/credits"
+              className="btn btn-sm btn-outline-success fw-bold"
+              title="Click to view earned + pending credits in your dashboard"
+              style={{ textDecoration: "none" }}
+            >
+              💰 {credits.earned} (+{credits.pending} pending)
+            </Link>
           )}
 
           {!user ? (
@@ -68,6 +97,11 @@ function Navbar({ user, onLogout }) {
                 <li>
                   <Link className="dropdown-item" to="/my-requests">
                     🙋 My Requests
+                  </Link>
+                </li>
+                <li>
+                  <Link className="dropdown-item" to="/credits">
+                    💰 Credits Dashboard
                   </Link>
                 </li>
                 <li><hr className="dropdown-divider" /></li>

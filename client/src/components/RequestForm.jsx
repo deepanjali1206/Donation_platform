@@ -21,6 +21,8 @@ const RequestForm = () => {
     requesterEmail: "",
     requesterPhone: "",
     deliveryPreference: "",
+    paymentMode: "credits",
+    useCredits: 0,
   });
 
   const [coordinates, setCoordinates] = useState([0, 0]);
@@ -29,11 +31,15 @@ const RequestForm = () => {
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (pos) =>
-          setCoordinates([pos.coords.longitude, pos.coords.latitude]),
+        (pos) => setCoordinates([pos.coords.longitude, pos.coords.latitude]),
         (err) => console.error("Geolocation error:", err)
       );
     }
+    // Load Razorpay script
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    document.body.appendChild(script);
   }, []);
 
   const handleChange = (e) => {
@@ -48,30 +54,25 @@ const RequestForm = () => {
     setAttachment(e.target.files[0]);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    const payload = {
-      ...formData,
-      category: formData.requestType,
-      title:
-        formData.requestType === "money"
-          ? "Financial Assistance"
-          : formData.requestType === "blood"
-          ? "Blood Requirement"
-          : formData.item || "General Request",
-      quantity: parseInt(formData.quantity) || 1,
-      coordinates,
-    };
-
+  // Submit request to backend
+  const submitRequest = async () => {
     try {
+      const payload = {
+        ...formData,
+        category: formData.requestType,
+        title:
+          formData.requestType === "money"
+            ? "Financial Assistance"
+            : formData.requestType === "blood"
+            ? "Blood Requirement"
+            : formData.item || "General Request",
+        quantity: parseInt(formData.quantity) || 1,
+        coordinates,
+      };
+
       const formDataToSend = new FormData();
-      for (const key in payload) {
-        formDataToSend.append(key, payload[key]);
-      }
-      if (attachment) {
-        formDataToSend.append("attachment", attachment);
-      }
+      for (const key in payload) formDataToSend.append(key, payload[key]);
+      if (attachment) formDataToSend.append("attachment", attachment);
 
       const res = await fetch("http://localhost:5000/api/requests", {
         method: "POST",
@@ -81,16 +82,14 @@ const RequestForm = () => {
         body: formDataToSend,
       });
 
-      let data;
-      try {
-        data = await res.json();
-      } catch {
-        const text = await res.text();
-        console.error("Response is not JSON:", text);
-        throw new Error("Server returned invalid response");
-      }
+      const data = await res.json();
 
       if (res.ok) {
+        const user = JSON.parse(localStorage.getItem("circleUser"));
+        if (data.updatedCredits !== undefined) {
+          const updatedUser = { ...user, credits: data.updatedCredits };
+          localStorage.setItem("circleUser", JSON.stringify(updatedUser));
+        }
         alert("Request submitted successfully!");
         navigate("/my-requests");
       } else {
@@ -102,14 +101,61 @@ const RequestForm = () => {
     }
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const user = JSON.parse(localStorage.getItem("circleUser"));
+    let requiredCredits = 0;
+    if (formData.isNGO || formData.requestType === "blood" || formData.urgency === "High") {
+      requiredCredits = 0;
+    } else if (formData.paymentMode === "credits") {
+      requiredCredits = 5;
+    } else if (formData.paymentMode === "hybrid") {
+      requiredCredits = Number(formData.useCredits) || 0;
+    }
+
+    if (user?.credits < requiredCredits) {
+      alert(`You need at least ${requiredCredits} credits to submit this request`);
+      return;
+    }
+
+    const isMoneyPayment =
+      formData.paymentMode === "money" || formData.paymentMode === "hybrid";
+
+    // Trigger Razorpay if payment required
+    if (isMoneyPayment && Number(formData.amount) > 0) {
+      const options = {
+        key: process.env.REACT_APP_RAZORPAY_KEY_ID, // Razorpay key from .env
+        amount: Number(formData.amount) * 100, // in paise
+        currency: "INR",
+        name: "Help Circle",
+        description: "Request Payment",
+        handler: async function (response) {
+          // Payment successful, submit request
+          await submitRequest();
+        },
+        prefill: {
+          name: formData.requesterName,
+          email: formData.requesterEmail,
+          contact: formData.requesterPhone,
+        },
+        theme: { color: "#3399cc" },
+      };
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } else {
+      // Credits only
+      await submitRequest();
+    }
+  };
+
   return (
     <div className="request-wrapper">
       <div className="request-container">
         <div className="request-card shadow">
           <h2 className="text-center mb-4">Submit Help Request</h2>
-
           <form onSubmit={handleSubmit}>
-            
+            {/* Name, Email, Phone */}
             <div className="mb-3">
               <label className="form-label">Your Name</label>
               <input
@@ -121,7 +167,6 @@ const RequestForm = () => {
                 required
               />
             </div>
-
             <div className="mb-3">
               <label className="form-label">Your Email</label>
               <input
@@ -133,7 +178,6 @@ const RequestForm = () => {
                 required
               />
             </div>
-
             <div className="mb-3">
               <label className="form-label">Phone Number</label>
               <input
@@ -147,7 +191,7 @@ const RequestForm = () => {
               />
             </div>
 
-            
+            {/* Request Type */}
             <div className="mb-3">
               <label className="form-label">Request Type</label>
               <select
@@ -164,6 +208,7 @@ const RequestForm = () => {
               </select>
             </div>
 
+            {/* Conditional Fields */}
             {formData.requestType === "item" && (
               <>
                 <div className="mb-3">
@@ -178,7 +223,6 @@ const RequestForm = () => {
                     required
                   />
                 </div>
-
                 <div className="mb-3">
                   <label className="form-label">Urgency</label>
                   <select
@@ -194,7 +238,6 @@ const RequestForm = () => {
                     <option value="High">High</option>
                   </select>
                 </div>
-
                 <div className="mb-3">
                   <label className="form-label">Quantity</label>
                   <input
@@ -210,7 +253,6 @@ const RequestForm = () => {
               </>
             )}
 
-     
             {formData.requestType === "money" && (
               <>
                 <div className="mb-3">
@@ -225,7 +267,6 @@ const RequestForm = () => {
                     required
                   />
                 </div>
-
                 <div className="mb-3">
                   <label className="form-label">Purpose / Notes</label>
                   <textarea
@@ -239,7 +280,6 @@ const RequestForm = () => {
               </>
             )}
 
-          
             {formData.requestType === "blood" && (
               <>
                 <div className="mb-3">
@@ -262,7 +302,6 @@ const RequestForm = () => {
                     <option value="AB-">AB-</option>
                   </select>
                 </div>
-
                 <div className="mb-3">
                   <label className="form-label">Preferred Date</label>
                   <input
@@ -277,7 +316,7 @@ const RequestForm = () => {
               </>
             )}
 
-      
+            {/* Location & Delivery */}
             <div className="mb-3">
               <label className="form-label">Location</label>
               <input
@@ -290,8 +329,6 @@ const RequestForm = () => {
                 required
               />
             </div>
-
-     
             <div className="mb-3">
               <label className="form-label">Delivery Preference</label>
               <select
@@ -307,7 +344,7 @@ const RequestForm = () => {
               </select>
             </div>
 
-          
+            {/* NGO & Attachments */}
             <div className="mb-3 form-check">
               <input
                 type="checkbox"
@@ -318,7 +355,6 @@ const RequestForm = () => {
               />
               <label className="form-check-label">Requesting as an NGO</label>
             </div>
-
             <div className="mb-3">
               <label className="form-label">Upload Document (optional)</label>
               <input
@@ -329,6 +365,34 @@ const RequestForm = () => {
                 accept=".jpg,.jpeg,.png,.pdf"
               />
             </div>
+
+            {/* Payment Mode */}
+            <div className="mb-3">
+              <label className="form-label">Payment Mode</label>
+              <select
+                name="paymentMode"
+                className="form-select"
+                value={formData.paymentMode}
+                onChange={handleChange}
+              >
+                <option value="credits">Use Credits</option>
+                <option value="money">Pure Money</option>
+                <option value="hybrid">Hybrid (Money + Credits)</option>
+              </select>
+            </div>
+            {formData.paymentMode === "hybrid" && (
+              <div className="mb-3">
+                <label className="form-label">Credits to Use</label>
+                <input
+                  type="number"
+                  name="useCredits"
+                  className="form-control"
+                  value={formData.useCredits}
+                  onChange={handleChange}
+                  min="0"
+                />
+              </div>
+            )}
 
             <button type="submit" className="btn btn-primary w-100">
               Submit Request

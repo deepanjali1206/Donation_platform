@@ -1,4 +1,3 @@
-
 const mongoose = require("mongoose");
 
 const requestSchema = new mongoose.Schema(
@@ -18,10 +17,9 @@ const requestSchema = new mongoose.Schema(
     notes: { type: String },
 
     bloodGroup: { type: String },
-    date: { type: String }, 
+    date: { type: String },
 
     location: { type: String, required: true },
-
 
     coordinates: {
       type: [Number],
@@ -32,10 +30,12 @@ const requestSchema = new mongoose.Schema(
     },
 
     isNGO: { type: Boolean, default: false },
+    isChild: { type: Boolean, default: false },   // ✅ Free request case
+    isElderly: { type: Boolean, default: false }, // ✅ Free request case
+    isEmergency: { type: Boolean, default: false }, // ✅ Free request case
 
     attachment: { type: String },
 
-  
     status: {
       type: String,
       enum: ["pending", "approved", "rejected", "completed"],
@@ -43,6 +43,11 @@ const requestSchema = new mongoose.Schema(
     },
 
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+
+    // ✅ Credit system fields
+    creditsRequired: { type: Number, default: 0 }, // how many credits needed for this request
+    creditsUsed: { type: Number, default: 0 },     // how many credits actually deducted
+    isFreeRequest: { type: Boolean, default: false }, // auto-true if NGO/child/elderly/emergency
   },
   { timestamps: true }
 );

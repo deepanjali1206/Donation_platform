@@ -14,6 +14,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';   
 import AdminRoute from './routes/AdminRoute';
 import AdminNavbar from './components/admin/AdminNavbar';  
+import CreditsDashboard from "./pages/CreditsDashboard";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -51,7 +52,7 @@ function App() {
         <Route path="/causes" element={<CausePage />} />  
         <Route path="/my-donations" element={<MyDonations />} />
         <Route path="/my-requests" element={<MyRequests />} />
-
+        <Route path="/credits" element={<CreditsDashboard />} />
         {/* ✅ Correct route for donating to a specific campaign */}
         <Route path="/donate/:id" element={<DonationForm />} />
 

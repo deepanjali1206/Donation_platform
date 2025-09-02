@@ -1,13 +1,12 @@
+// models/Donation.js
 const mongoose = require("mongoose");
 
 const donationSchema = new mongoose.Schema(
   {
     title: { type: String, trim: true },
-
     category: { type: String, trim: true },
 
     donorName: { type: String, required: true, trim: true },
-
     donorEmail: {
       type: String,
       required: true,
@@ -15,6 +14,12 @@ const donationSchema = new mongoose.Schema(
       trim: true,
       match: [/.+\@.+\..+/, "Please enter a valid email"],
     },
+
+    // Link donation to user
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+
+    // Credits for this donation
+    credits: { type: Number, default: 0 },
 
     // For money donations
     amount: { type: Number, min: 0 },
@@ -32,7 +37,6 @@ const donationSchema = new mongoose.Schema(
     },
     date: { type: Date },
 
-    // ✅ Location is plain string, not GeoJSON
     location: { type: String, trim: true },
 
     donationType: {

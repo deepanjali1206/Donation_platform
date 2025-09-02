@@ -30,7 +30,7 @@ export default function DonationForm() {
     try {
       const u = JSON.parse(localStorage.getItem("circleUser"));
       if (u?.email) setCurrentUser(u);
-    } catch {}
+    } catch { }
   }, []);
 
   // Fetch the selected campaign from backend (only if not passed via state)
@@ -99,15 +99,23 @@ export default function DonationForm() {
             return;
           }
 
-          await axios.post("http://localhost:5000/api/donations", formData, {
+          const res = await axios.post("http://localhost:5000/api/donations", formData, {
             headers: {
               "Content-Type": "multipart/form-data",
               Authorization: `Bearer ${token}`,
             },
           });
 
+          // ✅ update credits in UI
+          if (res.data?.updatedCredits) {
+            const updatedUser = { ...currentUser, credits: res.data.updatedCredits };
+            setCurrentUser(updatedUser);
+            localStorage.setItem("circleUser", JSON.stringify(updatedUser));
+          }
+
           alert("✅ Donation successful!");
           navigate("/my-donations");
+
         },
         prefill: {
           name: form.donorName,
@@ -150,15 +158,23 @@ export default function DonationForm() {
           return;
         }
 
-        await axios.post("http://localhost:5000/api/donations", formData, {
+        const res = await axios.post("http://localhost:5000/api/donations", formData, {
           headers: {
             "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${token}`,
           },
         });
 
+        // ✅ update credits in UI
+        if (res.data?.updatedCredits) {
+          const updatedUser = { ...currentUser, credits: res.data.updatedCredits };
+          setCurrentUser(updatedUser);
+          localStorage.setItem("circleUser", JSON.stringify(updatedUser));
+        }
+
         alert("✅ Donation submitted successfully!");
         navigate("/my-donations");
+
       } catch (err) {
         console.error("❌ Donation error:", err.response?.data || err.message);
         const msg =
