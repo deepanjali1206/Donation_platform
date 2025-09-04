@@ -1,8 +1,5 @@
 import { useEffect, useState } from "react";
-<<<<<<< HEAD
-=======
 import { useLocation } from "react-router-dom";
->>>>>>> d3ab97e8891c666a504d446ea37d797649124915
 import api from "../../lib/api";
 
 export default function AdminDashboard() {
@@ -68,11 +65,9 @@ export default function AdminDashboard() {
   // ---- Updaters ----
   const updateDonationStatus = async (id, status) => {
     try {
-<<<<<<< HEAD
       const { data } = await api.put(`/api/donations/${id}/status`, { status });
 
-      // ✅ If credits updated, show them in alert or console
-      if (status === "Delivered") {
+      if (status === "Delivered" && data?.updatedEarned !== undefined) {
         alert(
           `✅ Donation delivered!\nEarned Credits: ${data.updatedEarned}\nPending Credits: ${data.updatedPending}`
         );
@@ -80,10 +75,6 @@ export default function AdminDashboard() {
         alert(`Status updated to ${status}`);
       }
 
-      // Refresh donation list
-=======
-      await api.put(`/api/donations/${id}/status`, { status });
->>>>>>> d3ab97e8891c666a504d446ea37d797649124915
       fetchDonations();
     } catch (err) {
       console.error("Error updating donation status:", err);
@@ -92,7 +83,6 @@ export default function AdminDashboard() {
 
   const updateRequestStatus = async (id, action) => {
     try {
-      // action should be either "approve" or "reject"
       await api.put(`/api/requests/${id}/${action}`);
       fetchRequests();
     } catch (err) {
@@ -139,61 +129,6 @@ export default function AdminDashboard() {
         Admin Dashboard
       </h2>
 
-<<<<<<< HEAD
-      {donations.length === 0 ? (
-        <p className="text-center text-gray-500">No donations found.</p>
-      ) : (
-        <table className="w-full border-collapse border border-gray-200">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="border p-2">Donor</th>
-              <th className="border p-2">Type</th>
-              <th className="border p-2">Amount/Qty</th>
-              <th className="border p-2">Status</th>
-              <th className="border p-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {donations.map((d) => (
-              <tr key={d._id}>
-                <td className="border p-2">
-                  {d.donorName} <br />
-                  <small>{d.donorEmail}</small>
-                </td>
-                <td className="border p-2">{d.donationType}</td>
-                <td className="border p-2">
-                  {d.donationType === "money"
-                    ? `₹${d.amount} (Txn: ${d.transactionId})`
-                    : d.donationType === "item"
-                    ? `${d.quantity} items`
-                    : `${d.bloodGroup} on ${new Date(d.date).toLocaleDateString()}`}
-                </td>
-                <td className="border p-2 font-medium">{d.status}</td>
-                <td className="border p-2 space-x-2">
-                  <button
-                    onClick={() => updateStatus(d._id, "Processing")}
-                    className="px-3 py-1 bg-yellow-500 text-white rounded"
-                  >
-                    Processing
-                  </button>
-                  <button
-                    onClick={() => updateStatus(d._id, "Delivered")}
-                    className="px-3 py-1 bg-green-600 text-white rounded"
-                  >
-                    Delivered
-                  </button>
-                  <button
-                    onClick={() => updateStatus(d._id, "Pending")}
-                    className="px-3 py-1 bg-gray-500 text-white rounded"
-                  >
-                    Reset
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-=======
       {/* ---- Tabs ---- */}
       <div className="flex justify-center gap-3 mb-10 flex-wrap">
         {["overview", "users", "donations", "ngos", "requests", "reports"].map(
@@ -305,7 +240,9 @@ export default function AdminDashboard() {
                           ? `₹${d.amount} (Txn: ${d.transactionId})`
                           : d.donationType === "item"
                           ? `${d.quantity} items`
-                          : `${d.bloodGroup} on ${d.date}`}
+                          : `${d.bloodGroup} on ${new Date(
+                              d.date
+                            ).toLocaleDateString()}`}
                       </td>
                       <td className="border p-3 font-medium">{d.status}</td>
                       <td className="border p-3 space-x-2">
@@ -360,10 +297,6 @@ export default function AdminDashboard() {
       )}
 
       {section === "reports" && (
-<<<<<<< HEAD
-        <PlaceholderSection text="Reports section will come here." />
->>>>>>> d3ab97e8891c666a504d446ea37d797649124915
-=======
         <SectionTable
           title="Contact Form Reports"
           columns={["Name", "Email", "Message", "Date"]}
@@ -374,7 +307,6 @@ export default function AdminDashboard() {
             new Date(rep.createdAt).toLocaleString(),
           ])}
         />
->>>>>>> 93353255caa625885a55f1f94aa60401c2f2e2be
       )}
 
       {section === "ngos" && <PlaceholderSection text="NGOs section will come here." />}
