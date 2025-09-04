@@ -32,6 +32,7 @@ const requestRoutes = require("./routes/requestRoutes");
 const userRoutes = require("./routes/userRoutes");
 const paymentsRoute = require("./routes/payments");
 const campaignRoutes = require("./routes/campaignRoutes");
+const reportRoutes = require('./routes/reportRoutes');
 
 app.use("/api/auth", authRoutes);
 app.use("/api/donations", donationRoutes);
@@ -39,6 +40,7 @@ app.use("/api/requests", requestRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/payments", paymentsRoute);
 app.use("/api/campaigns", campaignRoutes);
+app.use('/api/reports', reportRoutes);
 
 
 mongoose
