@@ -3,13 +3,26 @@ const Donation = require("../models/Donation");
 const User = require("../models/User");
 
 /**
- * Credit rules — adjust these values to tune gamification
+ * Credit rules — tune as needed
  */
 const CREDIT_RULES = {
   MONEY_PER_100_RUPEES: 10, // ₹100 => 10 credits
   ITEM_PER_UNIT: 5,         // 1 item => 5 credits
   BLOOD_FIXED: 20,          // blood donation => 20 credits
 };
+
+function calculateCredits({ donationType, amount = 0, quantity = 0 }) {
+  if (donationType === "money") {
+    return Math.floor((Number(amount) || 0) / 100) * CREDIT_RULES.MONEY_PER_100_RUPEES;
+  }
+  if (donationType === "item") {
+    return (Number(quantity) || 0) * CREDIT_RULES.ITEM_PER_UNIT;
+  }
+  if (donationType === "blood") {
+    return CREDIT_RULES.BLOOD_FIXED;
+  }
+  return 0;
+}
 
 /**
  * Create a new donation
@@ -54,7 +67,8 @@ const createDonation = async (req, res) => {
       const hasRazorpay = razorpayPaymentId && razorpayOrderId && razorpaySignature;
       if (!transactionId && !hasRazorpay) {
         return res.status(400).json({
-          message: "Valid payment details are required for money donations (transactionId or Razorpay).",
+          message:
+            "Valid payment details are required for money donations (transactionId or Razorpay).",
         });
       }
     }
@@ -90,15 +104,8 @@ const createDonation = async (req, res) => {
       location: donationType === "blood" ? location : undefined,
     });
 
-    // Calculate credits
-    let credits = 0;
-    if (donationType === "money") {
-      credits = Math.floor((Number(amount) || 0) / 100) * CREDIT_RULES.MONEY_PER_100_RUPEES;
-    } else if (donationType === "item") {
-      credits = (Number(quantity) || 0) * CREDIT_RULES.ITEM_PER_UNIT;
-    } else if (donationType === "blood") {
-      credits = CREDIT_RULES.BLOOD_FIXED;
-    }
+    // Calculate & set credits on donation
+    const credits = calculateCredits({ donationType, amount, quantity });
     donation.credits = credits;
 
     await donation.save();
@@ -109,13 +116,12 @@ const createDonation = async (req, res) => {
 
       user.creditHistory = user.creditHistory || [];
       user.creditHistory.push({
-        type: "earn", // must be 'earn' or 'spend'
+        type: "earn",
         amount: credits,
-        reason: `${donationType} donation submitted`,
-        status: "pending", // you can still track 'pending' separately
+        reason: `${donationType} donation submitted`, // keep this format for matching later
+        status: "pending",
         date: new Date(),
       });
-
 
       await user.save();
     }
@@ -151,47 +157,69 @@ const updateDonationStatus = async (req, res) => {
     donation.status = status;
     await donation.save();
 
-    // ✅ Move credits if Delivered
+    // Only when moving into Delivered (and wasn't delivered before)
     if (prevStatus !== "Delivered" && status === "Delivered") {
       const user = await User.findById(donation.user);
-      if (user) {
-        const earnedCredits = donation.credits || 0;
+      if (!user) {
+        return res.status(404).json({ message: "User linked to donation not found." });
+      }
 
-        user.pendingCredits = (user.pendingCredits || 0) - earnedCredits;
-        if (user.pendingCredits < 0) user.pendingCredits = 0;
+      const earnedCredits = Number(donation.credits) || 0;
 
-        user.credits = (user.credits || 0) + earnedCredits;
+      // Move from pending → earned
+      user.pendingCredits = Math.max((user.pendingCredits || 0) - earnedCredits, 0);
+      user.credits = (user.credits || 0) + earnedCredits;
 
-        // Update history entry
-        const historyEntry = user.creditHistory.find(
+      // Find the most appropriate pending entry to flip to earned:
+      // match by type, status, amount, and reason including the donationType
+      let historyEntry = user.creditHistory
+        .slice() // copy to avoid mutating during search order
+        .reverse() // prefer the most recent pending entry first
+        .find(
           (h) =>
-            h.amount === earnedCredits &&
+            h.type === "earn" &&
+            h.status === "pending" &&
+            Number(h.amount) === earnedCredits &&
+            typeof h.reason === "string" &&
             h.reason.includes(donation.donationType) &&
-            h.status === "pending"
+            h.reason.includes("submitted")
         );
-        if (historyEntry) {
-          historyEntry.status = "earned";
-          historyEntry.reason = `${donation.donationType} donation approved`;
-          historyEntry.date = new Date();
-        } else {
-          user.creditHistory.push({
-            type: "donation",
-            amount: earnedCredits,
-            reason: `${donation.donationType} donation approved`,
-            status: "earned",
-            date: new Date(),
-          });
+
+      if (historyEntry) {
+        // Since we reversed for search, we need the original reference to mutate.
+        // Find original index to update the correct object.
+        const idx = user.creditHistory.findIndex(
+          (h) =>
+            h.type === historyEntry.type &&
+            h.status === "pending" &&
+            Number(h.amount) === historyEntry.amount &&
+            h.reason === historyEntry.reason &&
+            h.date.getTime() === historyEntry.date.getTime()
+        );
+        if (idx > -1) {
+          user.creditHistory[idx].status = "earned";
+          user.creditHistory[idx].reason = `${donation.donationType} donation approved`;
+          user.creditHistory[idx].date = new Date();
         }
-
-        await user.save();
-
-        return res.json({
-          message: `Donation marked as Delivered. Credits awarded.`,
-          donation,
-          updatedEarned: user.credits,
-          updatedPending: user.pendingCredits,
+      } else {
+        // If no matching pending record found, append a new earned record as fallback
+        user.creditHistory.push({
+          type: "earn",
+          amount: earnedCredits,
+          reason: `${donation.donationType} donation approved`,
+          status: "earned",
+          date: new Date(),
         });
       }
+
+      await user.save();
+
+      return res.json({
+        message: "Donation marked as Delivered. Credits awarded.",
+        donation,
+        updatedEarned: user.credits,
+        updatedPending: user.pendingCredits,
+      });
     }
 
     return res.json({ message: `Donation status updated to ${status}.`, donation });

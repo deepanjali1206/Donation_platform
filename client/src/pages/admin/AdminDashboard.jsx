@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import api from "../../lib/api"; 
+import api from "../../lib/api";
 
 export default function AdminDashboard() {
   const [donations, setDonations] = useState([]);
@@ -23,8 +23,19 @@ export default function AdminDashboard() {
 
   const updateStatus = async (id, status) => {
     try {
-      await api.put(`/api/donations/${id}/status`, { status });
-      fetchDonations(); 
+      const { data } = await api.put(`/api/donations/${id}/status`, { status });
+
+      // ✅ If credits updated, show them in alert or console
+      if (status === "Delivered") {
+        alert(
+          `✅ Donation delivered!\nEarned Credits: ${data.updatedEarned}\nPending Credits: ${data.updatedPending}`
+        );
+      } else {
+        alert(`Status updated to ${status}`);
+      }
+
+      // Refresh donation list
+      fetchDonations();
     } catch (err) {
       console.error("Error updating status:", err);
       alert("Failed to update status");
@@ -55,18 +66,19 @@ export default function AdminDashboard() {
           <tbody>
             {donations.map((d) => (
               <tr key={d._id}>
-                <td className="border p-2">{d.donorName} <br/> <small>{d.donorEmail}</small></td>
+                <td className="border p-2">
+                  {d.donorName} <br />
+                  <small>{d.donorEmail}</small>
+                </td>
                 <td className="border p-2">{d.donationType}</td>
                 <td className="border p-2">
                   {d.donationType === "money"
                     ? `₹${d.amount} (Txn: ${d.transactionId})`
                     : d.donationType === "item"
                     ? `${d.quantity} items`
-                    : `${d.bloodGroup} on ${d.date}`}
+                    : `${d.bloodGroup} on ${new Date(d.date).toLocaleDateString()}`}
                 </td>
-                <td className="border p-2 font-medium">
-                  {d.status}
-                </td>
+                <td className="border p-2 font-medium">{d.status}</td>
                 <td className="border p-2 space-x-2">
                   <button
                     onClick={() => updateStatus(d._id, "Processing")}

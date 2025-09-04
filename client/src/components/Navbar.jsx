@@ -1,3 +1,4 @@
+// client/src/components/Navbar.jsx
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
@@ -10,26 +11,29 @@ function Navbar({ user, onLogout }) {
   useEffect(() => {
     const fetchCredits = async () => {
       const token = localStorage.getItem("token");
-      if (!token) return;
+      if (!token || !user) return; // no need to fetch if user not logged in
+
       try {
         const res = await axios.get("/api/users/me/credits", {
           headers: { Authorization: `Bearer ${token}` },
         });
+
         setCredits({
-          earned: res.data.earned || 0,
-          pending: res.data.pending || 0,
+          earned: res.data?.earned || 0,
+          pending: res.data?.pending || 0,
         });
       } catch (err) {
-        console.error("❌ Error fetching navbar credits:", err);
+        console.error("❌ Error fetching navbar credits:", err.response?.data || err.message);
       }
     };
 
     fetchCredits();
-  }, [user]); // 🔑 re-run if user logs in/out
+  }, [user]);
 
   return (
     <nav className="navbar navbar-light bg-light shadow-sm py-3">
       <div className="container-fluid d-flex justify-content-between align-items-center">
+        
         {/* Left Logo */}
         <div className="navbar-left">
           <Link className="navbar-brand fw-bold fs-4 text-primary" to="/">

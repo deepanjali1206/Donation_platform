@@ -5,6 +5,7 @@ const multer = require("multer");
 const path = require("path");
 const auth = require("../middlewares/auth");
 
+// Controllers
 const {
   createDonation,
   getDonations,
@@ -20,16 +21,27 @@ const storage = multer.diskStorage({
     cb(null, uniqueSuffix + path.extname(file.originalname));
   },
 });
+
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith("image/")) cb(null, true);
-  else cb(new Error("Only image files are allowed!"), false);
+  if (file.mimetype.startsWith("image/")) {
+    cb(null, true);
+  } else {
+    cb(new Error("Only image files are allowed!"), false);
+  }
 };
+
 const upload = multer({ storage, fileFilter });
 
 // Routes
 router.post("/", auth, upload.single("image"), createDonation);
-router.get("/", auth, getDonations); // consider admin-only
+
+// 🔐 Get all donations (admin only)
+router.get("/", auth, getDonations);
+
+// 👤 Get my donations
 router.get("/me", auth, getMyDonations);
-router.put("/:id/status", auth, updateDonationStatus); // admin action
+
+// ✅ Approve/Reject donation (admin only)
+router.put("/:id/status", auth, updateDonationStatus);
 
 module.exports = router;
