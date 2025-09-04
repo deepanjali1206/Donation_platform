@@ -12,14 +12,21 @@ export default function CreditsDashboard() {
   const token =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
+  // ✅ Use API base URL from env or fallback
+  const API_BASE =
+    import.meta.env.VITE_API_URL || "http://localhost:5000";
+
   const fetchCredits = useCallback(async () => {
     if (!token) {
+      console.warn("⚠️ No token found in localStorage");
       setLoading(false);
       return;
     }
+
     try {
-      console.log("🟡 Fetching credits from API...");
-      const res = await axios.get("/api/users/me/credits", {
+      console.log("🟡 Fetching credits from API:", `${API_BASE}/api/users/me/credits`);
+
+      const res = await axios.get(`${API_BASE}/api/users/me/credits`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -27,12 +34,12 @@ export default function CreditsDashboard() {
 
       const { earned, pending, history } = res.data || {};
 
-      // Debug: Check what we're actually getting
+      // Debug: show parsed values
       console.log("📋 Parsed data:", {
         earned,
-        pending, 
+        pending,
         historyLength: history?.length || 0,
-        historySample: history?.slice(0, 2) // First 2 entries
+        historySample: history?.slice(0, 2),
       });
 
       setCredits({
@@ -42,12 +49,16 @@ export default function CreditsDashboard() {
       });
     } catch (err) {
       console.error("❌ Error fetching credits:", err);
-      console.error("❌ Error response data:", err.response?.data);
-      console.error("❌ Error status:", err.response?.status);
+      if (err.response) {
+        console.error("❌ Error response data:", err.response.data);
+        console.error("❌ Error status:", err.response.status);
+      } else {
+        console.error("❌ No response from server");
+      }
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, API_BASE]);
 
   useEffect(() => {
     fetchCredits();
@@ -91,7 +102,6 @@ export default function CreditsDashboard() {
             .slice()
             .reverse()
             .map((entry, idx) => {
-              // ✅ CORRECTED: Check status instead of type for pending state
               const isPending = entry.status === "pending";
               const status = isPending ? "pending" : "earned";
 

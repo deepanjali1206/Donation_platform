@@ -1,5 +1,5 @@
 // client/src/components/Navbar.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -8,32 +8,55 @@ import "./Navbar.css";
 function Navbar({ user, onLogout }) {
   const [credits, setCredits] = useState({ earned: 0, pending: 0 });
 
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+  const API_BASE =
+    import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+  const fetchCredits = useCallback(async () => {
+    if (!token || !user) return;
+
+    try {
+      console.log("🟡 Fetching navbar credits:", `${API_BASE}/api/users/me/credits`);
+
+      const res = await axios.get(`${API_BASE}/api/users/me/credits`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setCredits({
+        earned: res.data?.earned || 0,
+        pending: res.data?.pending || 0,
+      });
+
+      console.log("✅ Navbar credits updated:", res.data);
+    } catch (err) {
+      console.error(
+        "❌ Error fetching navbar credits:",
+        err.response?.data || err.message
+      );
+    }
+  }, [user, token, API_BASE]);
+
   useEffect(() => {
-    const fetchCredits = async () => {
-      const token = localStorage.getItem("token");
-      if (!token || !user) return; // no need to fetch if user not logged in
-
-      try {
-        const res = await axios.get("/api/users/me/credits", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        setCredits({
-          earned: res.data?.earned || 0,
-          pending: res.data?.pending || 0,
-        });
-      } catch (err) {
-        console.error("❌ Error fetching navbar credits:", err.response?.data || err.message);
-      }
-    };
-
     fetchCredits();
-  }, [user]);
+
+    // Refetch when window regains focus
+    const onFocus = () => fetchCredits();
+    window.addEventListener("focus", onFocus);
+
+    // Poll every 30s
+    const interval = setInterval(fetchCredits, 30_000);
+
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      clearInterval(interval);
+    };
+  }, [fetchCredits]);
 
   return (
     <nav className="navbar navbar-light bg-light shadow-sm py-3">
       <div className="container-fluid d-flex justify-content-between align-items-center">
-        
         {/* Left Logo */}
         <div className="navbar-left">
           <Link className="navbar-brand fw-bold fs-4 text-primary" to="/">
@@ -92,7 +115,10 @@ function Navbar({ user, onLogout }) {
               >
                 👤 {user.name || "Profile"}
               </button>
-              <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+              <ul
+                className="dropdown-menu dropdown-menu-end"
+                aria-labelledby="userMenu"
+              >
                 <li>
                   <Link className="dropdown-item" to="/my-donations">
                     📦 My Donations
@@ -108,9 +134,14 @@ function Navbar({ user, onLogout }) {
                     💰 Credits Dashboard
                   </Link>
                 </li>
-                <li><hr className="dropdown-divider" /></li>
                 <li>
-                  <button onClick={onLogout} className="dropdown-item text-danger">
+                  <hr className="dropdown-divider" />
+                </li>
+                <li>
+                  <button
+                    onClick={onLogout}
+                    className="dropdown-item text-danger"
+                  >
                     🚪 Logout
                   </button>
                 </li>
