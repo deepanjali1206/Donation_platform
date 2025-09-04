@@ -1,4 +1,3 @@
-// src/pages/AdminDashboard.jsx
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import api from "../../lib/api";
@@ -10,8 +9,11 @@ export default function AdminDashboard() {
 
   const [donations, setDonations] = useState([]);
   const [users, setUsers] = useState([]);
+  const [requests, setRequests] = useState([]);
+  const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // ---- Fetchers ----
   const fetchDonations = async () => {
     setLoading(true);
     try {
@@ -36,28 +38,82 @@ export default function AdminDashboard() {
     }
   };
 
-  const updateStatus = async (id, status) => {
+  const fetchRequests = async () => {
+    setLoading(true);
+    try {
+      const { data } = await api.get("/api/requests");
+      setRequests(data);
+    } catch (err) {
+      console.error("Error fetching requests:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchReports = async () => {
+    setLoading(true);
+    try {
+      const { data } = await api.get("/api/reports");
+      setReports(data);
+    } catch (err) {
+      console.error("Error fetching reports:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ---- Updaters ----
+  const updateDonationStatus = async (id, status) => {
     try {
       await api.put(`/api/donations/${id}/status`, { status });
       fetchDonations();
     } catch (err) {
-      console.error("Error updating status:", err);
+      console.error("Error updating donation status:", err);
     }
   };
 
+  const updateRequestStatus = async (id, action) => {
+    try {
+      // action should be either "approve" or "reject"
+      await api.put(`/api/requests/${id}/${action}`);
+      fetchRequests();
+    } catch (err) {
+      console.error(`Error updating request status (${action}):`, err);
+    }
+  };
+
+  // ---- Lifecycle ----
   useEffect(() => {
-    fetchUsers();
-    fetchDonations();
-    if (section === "donations") fetchDonations();
-    if (section === "users") fetchUsers();
+    switch (section) {
+      case "users":
+        fetchUsers();
+        break;
+      case "donations":
+        fetchDonations();
+        break;
+      case "requests":
+        fetchRequests();
+        break;
+      case "reports":
+        fetchReports();
+        break;
+      case "overview":
+      default:
+        fetchUsers();
+        fetchDonations();
+        fetchRequests();
+        fetchReports();
+        break;
+    }
   }, [section]);
 
-  if (loading)
+  if (loading) {
     return (
       <p className="text-center mt-5 text-indigo-600 font-semibold animate-pulse">
         Loading {section}...
       </p>
     );
+  }
 
   return (
     <div className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 min-h-screen">
@@ -84,13 +140,12 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      {/* -------- Overview -------- */}
+      {/* ---- Sections ---- */}
       {section === "overview" && (
         <div className="space-y-8">
           <p className="text-center text-gray-600 text-lg">
             Welcome to the Admin Dashboard. Explore quick stats below.
           </p>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <DashboardCard
               title="Total Users"
@@ -118,7 +173,7 @@ export default function AdminDashboard() {
             />
             <DashboardCard
               title="Requests"
-              value="—"
+              value={requests.length || "—"}
               subtitle="Pending requests"
               color="yellow"
               link={{ section: "requests", text: "View Requests" }}
@@ -126,8 +181,8 @@ export default function AdminDashboard() {
             />
             <DashboardCard
               title="Reports"
-              value="—"
-              subtitle="Generated reports"
+              value={reports.length || "—"}
+              subtitle="Contact form messages"
               color="red"
               link={{ section: "reports", text: "View Reports" }}
               setSection={setSection}
@@ -136,7 +191,6 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* -------- Users -------- */}
       {section === "users" && (
         <SectionTable
           title="Manage Users"
@@ -145,7 +199,6 @@ export default function AdminDashboard() {
         />
       )}
 
-      {/* -------- Donations -------- */}
       {section === "donations" && (
         <>
           <h3 className="text-2xl font-bold mb-5 text-center text-indigo-500 drop-shadow-sm">
@@ -167,10 +220,7 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody>
                   {donations.map((d) => (
-                    <tr
-                      key={d._id}
-                      className="hover:bg-indigo-50 transition-colors"
-                    >
+                    <tr key={d._id} className="hover:bg-indigo-50 transition-colors">
                       <td className="border p-3">
                         {d.donorName}
                         <br />
@@ -189,17 +239,17 @@ export default function AdminDashboard() {
                         <ActionButton
                           label="Processing"
                           color="yellow"
-                          onClick={() => updateStatus(d._id, "Processing")}
+                          onClick={() => updateDonationStatus(d._id, "Processing")}
                         />
                         <ActionButton
                           label="Delivered"
                           color="green"
-                          onClick={() => updateStatus(d._id, "Delivered")}
+                          onClick={() => updateDonationStatus(d._id, "Delivered")}
                         />
                         <ActionButton
                           label="Reset"
                           color="gray"
-                          onClick={() => updateStatus(d._id, "Pending")}
+                          onClick={() => updateDonationStatus(d._id, "Pending")}
                         />
                       </td>
                     </tr>
@@ -211,19 +261,50 @@ export default function AdminDashboard() {
         </>
       )}
 
-      {/* Placeholder Sections */}
-      {section === "ngos" && (
-        <PlaceholderSection text="NGOs section will come here." />
-      )}
       {section === "requests" && (
-        <PlaceholderSection text="Requests section will come here." />
+        <SectionTable
+          title="Manage Requests"
+          columns={["Name", "Email", "Type", "Status", "Actions"]}
+          data={requests.map((r) => [
+            r.name || r.requesterName,
+            r.email || r.requesterEmail,
+            r.type || r.category,
+            r.status,
+            <div className="space-x-2" key={r._id}>
+              <ActionButton
+                label="Approve"
+                color="green"
+                onClick={() => updateRequestStatus(r._id, "approve")}
+              />
+              <ActionButton
+                label="Reject"
+                color="gray"
+                onClick={() => updateRequestStatus(r._id, "reject")}
+              />
+            </div>,
+          ])}
+        />
       )}
+
       {section === "reports" && (
-        <PlaceholderSection text="Reports section will come here." />
+        <SectionTable
+          title="Contact Form Reports"
+          columns={["Name", "Email", "Message", "Date"]}
+          data={reports.map((rep) => [
+            rep.name,
+            rep.email,
+            rep.message,
+            new Date(rep.createdAt).toLocaleString(),
+          ])}
+        />
       )}
+
+      {section === "ngos" && <PlaceholderSection text="NGOs section will come here." />}
     </div>
   );
 }
+
+// ----- Reusable subcomponents -----
 
 function DashboardCard({ title, value, subtitle, color, link, setSection }) {
   const colors = {
@@ -307,8 +388,6 @@ function ActionButton({ label, color, onClick }) {
 
 function PlaceholderSection({ text }) {
   return (
-    <p className="text-center text-gray-600 mt-10 text-lg font-medium">
-      {text}
-    </p>
+    <p className="text-center text-gray-600 mt-10 text-lg font-medium">{text}</p>
   );
 }
