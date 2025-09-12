@@ -62,7 +62,7 @@ export default function AdminDashboard() {
     }
   };
 
-  // ---- Updaters ----
+  
   const updateDonationStatus = async (id, status) => {
     try {
       const { data } = await api.put(`/api/donations/${id}/status`, { status });
@@ -129,7 +129,6 @@ export default function AdminDashboard() {
         Admin Dashboard
       </h2>
 
-      {/* ---- Tabs ---- */}
       <div className="flex justify-center gap-3 mb-10 flex-wrap">
         {["overview", "users", "donations", "ngos", "requests", "reports"].map(
           (s) => (
