@@ -1,15 +1,71 @@
+// client/src/pages/CreditsDashboard.jsx
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
+import BronzeWelcome from "../components/BronzeWelcome";
 
-// Define gamified levels
+// 🎖 Define gamified levels with updated badge colors
 const LEVELS = [
-  { name: "Bronze", min: 0, max: 100, color: "from-orange-400 to-yellow-500", benefits: ["Basic recognition", "Access to donation history"] },
-  { name: "Silver", min: 101, max: 300, color: "from-gray-400 to-gray-600", benefits: ["Silver badge", "Priority support", "Early access to campaigns"] },
-  { name: "Gold", min: 301, max: 600, color: "from-yellow-400 to-yellow-600", benefits: ["Gold badge", "Profile highlight", "Special donor leaderboard"] },
-  { name: "Platinum", min: 601, max: 1000, color: "from-blue-400 to-blue-600", benefits: ["Platinum badge", "Exclusive events", "VIP recognition"] },
-  { name: "Diamond", min: 1001, max: Infinity, color: "from-purple-500 to-pink-600", benefits: ["Diamond badge", "Lifetime recognition", "Featured supporter"] },
+  {
+    name: "Bronze",
+    min: 0,
+    max: 100,
+    color: "from-[#cd7f32] to-[#a0522d]",
+    benefits: ["Basic recognition", "Access to donation history"],
+  },
+  {
+    name: "Silver",
+    min: 101,
+    max: 300,
+    color: "from-[#c0c0c0] to-[#808080]",
+    benefits: ["Silver badge", "Priority support", "Early access to campaigns"],
+  },
+  {
+    name: "Gold",
+    min: 301,
+    max: 600,
+    color: "from-[#FFD700] to-[#FFA500]",
+    benefits: ["Gold badge", "Profile highlight", "Special donor leaderboard"],
+  },
+  {
+    name: "Platinum",
+    min: 601,
+    max: 1000,
+    color: "from-[#e5e4e2] to-[#b0c4de]",
+    benefits: ["Platinum badge", "Exclusive events", "VIP recognition"],
+  },
+  {
+    name: "Diamond",
+    min: 1001,
+    max: Infinity,
+    color: "from-[#8e2de2] to-[#4a00e0]",
+    benefits: ["Diamond badge", "Lifetime recognition", "Featured supporter"],
+  },
 ];
+
+// ⭐ Inline Badge component
+const Badge = ({ level }) => {
+  const badges = {
+    Bronze: { emoji: "🥉", color: "#cd7f32" },
+    Silver: { emoji: "🥈", color: "#C0C0C0" },
+    Gold: { emoji: "🥇", color: "#FFD700" },
+    Platinum: { emoji: "🏆", color: "#0066cc" },
+    Diamond: { emoji: "💎", color: "#8e2de2" },
+  };
+  const badge = badges[level] || { emoji: "🎖", color: "#000" };
+  return (
+    <span
+      style={{
+        fontSize: "1.5rem",
+        marginLeft: "0.5rem",
+        color: badge.color,
+      }}
+      title={`${level} Donor`}
+    >
+      {badge.emoji}
+    </span>
+  );
+};
 
 export default function CreditsDashboard() {
   const [credits, setCredits] = useState({
@@ -20,7 +76,8 @@ export default function CreditsDashboard() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("Bronze");
 
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
   const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
   const fetchCredits = useCallback(async () => {
@@ -28,14 +85,11 @@ export default function CreditsDashboard() {
       setLoading(false);
       return;
     }
-
     try {
       const res = await axios.get(`${API_BASE}/api/users/me/credits`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       const { earned, pending, history } = res.data || {};
-
       setCredits({
         earned: earned || 0,
         pending: pending || 0,
@@ -58,30 +112,56 @@ export default function CreditsDashboard() {
 
   // Determine current level
   const currentLevel =
-    LEVELS.find((lvl) => credits.earned >= lvl.min && credits.earned <= lvl.max) ||
-    LEVELS[LEVELS.length - 1];
+    LEVELS.find(
+      (lvl) => credits.earned >= lvl.min && credits.earned <= lvl.max
+    ) || LEVELS[LEVELS.length - 1];
 
   const nextLevel = LEVELS.find((lvl) => credits.earned < lvl.min);
 
   // Progress percentage
   const progress =
-    ((credits.earned - currentLevel.min) / (currentLevel.max - currentLevel.min)) * 100;
+    ((credits.earned - currentLevel.min) / (currentLevel.max - currentLevel.min)) *
+    100;
+
+  // Example top donors (replace with API later)
+  const topDonors = [
+    { name: "Alice", credits: 1200 },
+    { name: "Bob", credits: 950 },
+    { name: "Charlie", credits: 850 },
+  ];
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-10">
-      <h2 className="text-4xl font-extrabold mb-8 text-center">💰 Credits Dashboard</h2>
+      <BronzeWelcome credits={credits} currentLevel={currentLevel} />
+
+      <h2 className="text-4xl font-extrabold mb-8 text-center">
+        💰 Credits Dashboard
+      </h2>
+
+      {/* Profile Highlight Banner */}
+      {["Gold", "Platinum", "Diamond"].includes(currentLevel.name) && (
+        <div
+          className={`p-4 mb-6 rounded-xl shadow-lg text-center border-4`}
+          style={{
+            borderColor: currentLevel.color.split("to")[1],
+            backgroundColor: "#fff7e6",
+          }}
+        >
+          🌟 You are a <strong>{currentLevel.name}</strong> donor! Your profile is highlighted.
+        </div>
+      )}
 
       {/* Current Level Badge */}
       <div
         className={`p-8 rounded-2xl shadow-lg mb-10 bg-gradient-to-r ${currentLevel.color} text-white`}
       >
-        <h3 className="text-3xl font-bold text-center">🏅 {currentLevel.name} Level</h3>
+        <h3 className="text-3xl font-bold text-center flex justify-center items-center gap-2">
+          🏅 {currentLevel.name} Level <Badge level={currentLevel.name} />
+        </h3>
         <p className="text-center mt-2 text-lg">
           {credits.earned} credits{" "}
           {nextLevel && ` • Next: ${nextLevel.name} at ${nextLevel.min} credits`}
         </p>
-
-        {/* Progress Bar */}
         <div className="mt-6 w-full bg-white/30 h-5 rounded-full overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
@@ -107,8 +187,6 @@ export default function CreditsDashboard() {
       {/* Gamified Levels Tabs */}
       <div className="bg-white p-6 rounded-xl shadow-md mb-10">
         <h3 className="text-2xl font-bold mb-6 text-center">🎮 Gamified Levels</h3>
-
-        {/* Tabs */}
         <div className="flex justify-center gap-4 mb-6 flex-wrap">
           {LEVELS.map((lvl) => (
             <button
@@ -124,8 +202,6 @@ export default function CreditsDashboard() {
             </button>
           ))}
         </div>
-
-        {/* Active Tab Content */}
         <motion.div
           key={activeTab}
           initial={{ opacity: 0, y: 20 }}
@@ -135,12 +211,44 @@ export default function CreditsDashboard() {
         >
           <h4 className="text-xl font-bold mb-4">🏅 {activeTab} Benefits</h4>
           <ul className="list-disc pl-6 space-y-2 text-left max-w-md mx-auto">
-            {LEVELS.find((lvl) => lvl.name === activeTab)?.benefits.map((benefit, i) => (
-              <li key={i} className="text-lg">{benefit}</li>
-            ))}
+            {LEVELS.find((lvl) => lvl.name === activeTab)?.benefits.map(
+              (benefit, i) => (
+                <li key={i} className="text-lg">{benefit}</li>
+              )
+            )}
           </ul>
         </motion.div>
       </div>
+
+      {/* Special Donor Leaderboard */}
+      {["Gold", "Platinum", "Diamond"].includes(currentLevel.name) && (
+        <div className="bg-white p-6 rounded-xl shadow-md mb-10">
+          <h3 className="text-2xl font-bold mb-4 text-center">🏆 Special Donor Leaderboard</h3>
+          <ul className="max-w-md mx-auto space-y-2">
+            {topDonors.map((donor, idx) => (
+              <li
+                key={idx}
+                className="p-3 border rounded-lg flex justify-between items-center hover:bg-gray-50 transition"
+              >
+                <span>{idx + 1}. {donor.name}</span>
+                <span className="font-bold text-green-600">{donor.credits} credits</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Exclusive Events & VIP Recognition */}
+      {["Platinum", "Diamond"].includes(currentLevel.name) && (
+        <div className="bg-white p-6 rounded-xl shadow-md mb-10">
+          <h3 className="text-2xl font-bold mb-4 text-center">🎉 Exclusive Events & VIP Recognition</h3>
+          <ul className="list-disc pl-6 space-y-2 max-w-md mx-auto text-left">
+            <li className="text-lg">🎫 Access to exclusive events and workshops</li>
+            <li className="text-lg">💎 VIP recognition on donor wall</li>
+            <li className="text-lg">✨ Early invites to special campaigns</li>
+          </ul>
+        </div>
+      )}
 
       {/* Credit history */}
       <div className="bg-white p-6 rounded-xl shadow-md">
@@ -163,14 +271,9 @@ export default function CreditsDashboard() {
                         : entry.type === "spend"
                         ? "➖ Spent"
                         : "⏳ Pending"}{" "}
-                      <strong>{entry.amount || 0}</strong> –{" "}
-                      {entry.reason || "No details"}
+                      <strong>{entry.amount || 0}</strong> – {entry.reason || "No details"}
                     </span>
-                    <span
-                      className={`font-bold ${
-                        isPending ? "text-yellow-600" : "text-green-600"
-                      }`}
-                    >
+                    <span className={`font-bold ${isPending ? "text-yellow-600" : "text-green-600"}`}>
                       {isPending ? "pending" : "earned"}
                     </span>
                   </li>

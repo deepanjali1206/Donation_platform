@@ -1,35 +1,68 @@
 // client/src/components/Navbar.jsx
 import React, { useEffect, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Navbar.css";
 
+// ⭐ Inline Badge component
+const Badge = ({ level, onClick }) => {
+  const badges = {
+    Bronze: { emoji: "🥉", color: "#cd7f32" },
+    Silver: { emoji: "🥈", color: "#C0C0C0" },
+    Gold: { emoji: "🥇", color: "#FFD700" },
+    Platinum: { emoji: "🏆", color: "#0066cc" },
+    Diamond: { emoji: "💎", color: "#8e2de2" },
+  };
+
+  const badge = badges[level] || { emoji: "🎖", color: "#000" };
+
+  return (
+    <span
+      style={{
+        fontSize: "1.2rem",
+        marginLeft: "0.5rem",
+        color: badge.color,
+        cursor: "pointer",
+      }}
+      title={`${level} Donor`}
+      onClick={onClick}
+    >
+      {badge.emoji}
+    </span>
+  );
+};
+
 function Navbar({ user, onLogout }) {
   const [credits, setCredits] = useState({ earned: 0, pending: 0 });
+  const [level, setLevel] = useState(null);
+  const navigate = useNavigate();
 
   const token =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-  const API_BASE =
-    import.meta.env.VITE_API_URL || "http://localhost:5000";
-
+  // Fetch credits and determine current level
   const fetchCredits = useCallback(async () => {
     if (!token || !user) return;
 
     try {
-      console.log("🟡 Fetching navbar credits:", `${API_BASE}/api/users/me/credits`);
-
       const res = await axios.get(`${API_BASE}/api/users/me/credits`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setCredits({
-        earned: res.data?.earned || 0,
-        pending: res.data?.pending || 0,
-      });
+      const earned = res.data?.earned || 0;
+      const pending = res.data?.pending || 0;
 
-      console.log("✅ Navbar credits updated:", res.data);
+      setCredits({ earned, pending });
+
+      // Determine current level based on earned credits
+      if (earned >= 1001) setLevel("Diamond");
+      else if (earned >= 601) setLevel("Platinum");
+      else if (earned >= 301) setLevel("Gold");
+      else if (earned >= 101) setLevel("Silver");
+      else if (earned >= 0) setLevel("Bronze");
+      else setLevel(null);
     } catch (err) {
       console.error(
         "❌ Error fetching navbar credits:",
@@ -41,11 +74,9 @@ function Navbar({ user, onLogout }) {
   useEffect(() => {
     fetchCredits();
 
-    // Refetch when window regains focus
     const onFocus = () => fetchCredits();
     window.addEventListener("focus", onFocus);
 
-    // Poll every 30s
     const interval = setInterval(fetchCredits, 30_000);
 
     return () => {
@@ -107,13 +138,19 @@ function Navbar({ user, onLogout }) {
           ) : (
             <div className="dropdown">
               <button
-                className="btn btn-outline-secondary btn-sm dropdown-toggle"
+                className="btn btn-outline-secondary btn-sm dropdown-toggle d-flex align-items-center gap-2"
                 type="button"
                 id="userMenu"
                 data-bs-toggle="dropdown"
                 aria-expanded="false"
               >
                 👤 {user.name || "Profile"}
+                {level && (
+                  <Badge
+                    level={level}
+                    onClick={() => navigate("/credits")}
+                  />
+                )}
               </button>
               <ul
                 className="dropdown-menu dropdown-menu-end"
