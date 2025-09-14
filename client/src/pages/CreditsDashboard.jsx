@@ -75,11 +75,14 @@ export default function CreditsDashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("Bronze");
+  const [topDonors, setTopDonors] = useState([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(true);
 
   const token =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
   const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
+  // 🔹 Fetch user credits
   const fetchCredits = useCallback(async () => {
     if (!token) {
       setLoading(false);
@@ -102,13 +105,36 @@ export default function CreditsDashboard() {
     }
   }, [token, API_BASE]);
 
+  // 🔹 Fetch leaderboard data
+  const fetchTopDonors = useCallback(async () => {
+    try {
+      setLeaderboardLoading(true);
+      const res = await axios.get(`${API_BASE}/api/users/top-donors`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setTopDonors(res.data || []);
+    } catch (err) {
+      console.error("❌ Error fetching top donors:", err);
+    } finally {
+      setLeaderboardLoading(false);
+    }
+  }, [token, API_BASE]);
+
   useEffect(() => {
     fetchCredits();
-    const interval = setInterval(fetchCredits, 30_000);
-    return () => clearInterval(interval);
-  }, [fetchCredits]);
+    fetchTopDonors();
 
-  if (loading) return <p className="text-center text-lg">Loading credits...</p>;
+    // Refresh every 30 sec
+    const interval = setInterval(() => {
+      fetchCredits();
+      fetchTopDonors();
+    }, 30_000);
+
+    return () => clearInterval(interval);
+  }, [fetchCredits, fetchTopDonors]);
+
+  if (loading)
+    return <p className="text-center text-lg">Loading credits...</p>;
 
   // Determine current level
   const currentLevel =
@@ -123,15 +149,9 @@ export default function CreditsDashboard() {
     ((credits.earned - currentLevel.min) / (currentLevel.max - currentLevel.min)) *
     100;
 
-  // Example top donors (replace with API later)
-  const topDonors = [
-    { name: "Alice", credits: 1200 },
-    { name: "Bob", credits: 950 },
-    { name: "Charlie", credits: 850 },
-  ];
-
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-10">
+      {/* Bronze Welcome Component */}
       <BronzeWelcome credits={credits} currentLevel={currentLevel} />
 
       <h2 className="text-4xl font-extrabold mb-8 text-center">
@@ -147,7 +167,8 @@ export default function CreditsDashboard() {
             backgroundColor: "#fff7e6",
           }}
         >
-          🌟 You are a <strong>{currentLevel.name}</strong> donor! Your profile is highlighted.
+          🌟 You are a <strong>{currentLevel.name}</strong> donor! Your profile
+          is highlighted.
         </div>
       )}
 
@@ -186,7 +207,9 @@ export default function CreditsDashboard() {
 
       {/* Gamified Levels Tabs */}
       <div className="bg-white p-6 rounded-xl shadow-md mb-10">
-        <h3 className="text-2xl font-bold mb-6 text-center">🎮 Gamified Levels</h3>
+        <h3 className="text-2xl font-bold mb-6 text-center">
+          🎮 Gamified Levels
+        </h3>
         <div className="flex justify-center gap-4 mb-6 flex-wrap">
           {LEVELS.map((lvl) => (
             <button
@@ -213,7 +236,9 @@ export default function CreditsDashboard() {
           <ul className="list-disc pl-6 space-y-2 text-left max-w-md mx-auto">
             {LEVELS.find((lvl) => lvl.name === activeTab)?.benefits.map(
               (benefit, i) => (
-                <li key={i} className="text-lg">{benefit}</li>
+                <li key={i} className="text-lg">
+                  {benefit}
+                </li>
               )
             )}
           </ul>
@@ -223,27 +248,45 @@ export default function CreditsDashboard() {
       {/* Special Donor Leaderboard */}
       {["Gold", "Platinum", "Diamond"].includes(currentLevel.name) && (
         <div className="bg-white p-6 rounded-xl shadow-md mb-10">
-          <h3 className="text-2xl font-bold mb-4 text-center">🏆 Special Donor Leaderboard</h3>
-          <ul className="max-w-md mx-auto space-y-2">
-            {topDonors.map((donor, idx) => (
-              <li
-                key={idx}
-                className="p-3 border rounded-lg flex justify-between items-center hover:bg-gray-50 transition"
-              >
-                <span>{idx + 1}. {donor.name}</span>
-                <span className="font-bold text-green-600">{donor.credits} credits</span>
-              </li>
-            ))}
-          </ul>
+          <h3 className="text-2xl font-bold mb-4 text-center">
+            🏆 Special Donor Leaderboard
+          </h3>
+          {leaderboardLoading ? (
+            <p className="text-center text-gray-500">Loading leaderboard...</p>
+          ) : topDonors.length > 0 ? (
+            <ul className="max-w-md mx-auto space-y-2">
+              {topDonors.map((donor, idx) => (
+                <li
+                  key={idx}
+                  className="p-3 border rounded-lg flex justify-between items-center hover:bg-gray-50 transition"
+                >
+                  <span>
+                    {idx + 1}. {donor.name || "Anonymous"}
+                  </span>
+                  <span className="font-bold text-green-600">
+                    {donor.credits} credits
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-center text-gray-500">
+              No top donors available yet.
+            </p>
+          )}
         </div>
       )}
 
       {/* Exclusive Events & VIP Recognition */}
       {["Platinum", "Diamond"].includes(currentLevel.name) && (
         <div className="bg-white p-6 rounded-xl shadow-md mb-10">
-          <h3 className="text-2xl font-bold mb-4 text-center">🎉 Exclusive Events & VIP Recognition</h3>
+          <h3 className="text-2xl font-bold mb-4 text-center">
+            🎉 Exclusive Events & VIP Recognition
+          </h3>
           <ul className="list-disc pl-6 space-y-2 max-w-md mx-auto text-left">
-            <li className="text-lg">🎫 Access to exclusive events and workshops</li>
+            <li className="text-lg">
+              🎫 Access to exclusive events and workshops
+            </li>
             <li className="text-lg">💎 VIP recognition on donor wall</li>
             <li className="text-lg">✨ Early invites to special campaigns</li>
           </ul>
@@ -271,9 +314,14 @@ export default function CreditsDashboard() {
                         : entry.type === "spend"
                         ? "➖ Spent"
                         : "⏳ Pending"}{" "}
-                      <strong>{entry.amount || 0}</strong> – {entry.reason || "No details"}
+                      <strong>{entry.amount || 0}</strong> –{" "}
+                      {entry.reason || "No details"}
                     </span>
-                    <span className={`font-bold ${isPending ? "text-yellow-600" : "text-green-600"}`}>
+                    <span
+                      className={`font-bold ${
+                        isPending ? "text-yellow-600" : "text-green-600"
+                      }`}
+                    >
                       {isPending ? "pending" : "earned"}
                     </span>
                   </li>
