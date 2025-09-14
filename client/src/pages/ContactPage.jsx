@@ -1,6 +1,6 @@
-// src/pages/ContactPage.jsx
+
 import React, { useState, useEffect } from "react";
-import api from "../lib/api"; // <-- adjust path if needed
+import api from "../lib/api";
 import "./ContactPage.css";
 
 const ContactPage = () => {
@@ -11,10 +11,9 @@ const ContactPage = () => {
     message: "",
   });
 
-  const [userLevel, setUserLevel] = useState("Bronze"); // default
+  const [userLevel, setUserLevel] = useState("Bronze");
   const [status, setStatus] = useState({ loading: false, success: null, error: null });
 
-  // 🔹 Fetch user credits to determine their level
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -26,7 +25,6 @@ const ContactPage = () => {
         });
         const { earned } = res.data;
 
-        // Match levels (same as in CreditsDashboard)
         if (earned >= 101 && earned <= 300) setUserLevel("Silver");
         else if (earned >= 301 && earned <= 600) setUserLevel("Gold");
         else if (earned >= 601 && earned <= 1000) setUserLevel("Platinum");
@@ -50,7 +48,7 @@ const ContactPage = () => {
     setStatus({ loading: true, success: null, error: null });
 
     try {
-      // 🔹 Add priority flag if user is Silver+
+  
       const payload = {
         ...formData,
         priority: ["Silver", "Gold", "Platinum", "Diamond"].includes(userLevel)

@@ -1,5 +1,5 @@
 import React from "react";
-import { Medal } from "lucide-react"; // optional: lucide-react icons
+import { Medal } from "lucide-react";
 
 export default function Badge({ level }) {
   const badgeStyles = {

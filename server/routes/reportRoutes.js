@@ -1,9 +1,8 @@
-// server/routes/reportRoutes.js
+
 const express = require('express');
 const router = express.Router();
-const Report = require('../models/Report');  // <-- fixed path
+const Report = require('../models/Report');  
 
-// Create a new report (from Contact Page)
 router.post('/', async (req, res) => {
   try {
     const report = await Report.create(req.body);
@@ -14,7 +13,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Get all reports (for Admin Dashboard)
 router.get('/', async (req, res) => {
   try {
     const reports = await Report.find().sort({ createdAt: -1 });

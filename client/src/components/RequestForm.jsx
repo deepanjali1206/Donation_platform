@@ -11,6 +11,8 @@ const RequestForm = () => {
     urgency: "Low",
     quantity: "",
     isNGO: false,
+    ngoStatus: "unverified",
+    ngoVerificationDocuments: [],
     amount: "",
     notes: "",
     bloodGroup: "",
@@ -34,13 +36,14 @@ const RequestForm = () => {
   const [attachment, setAttachment] = useState(null);
   const [user, setUser] = useState({ credits: 0 });
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [itemCategory, setItemCategory] = useState("");
+  const [ngoDocuments, setNgoDocuments] = useState([]);
+  const [verificationStatus, setVerificationStatus] = useState("not_started");
 
   useEffect(() => {
-    // Load user data
     const userData = JSON.parse(localStorage.getItem("circleUser")) || { credits: 0 };
     setUser(userData);
 
-    // Get geolocation
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => setCoordinates([pos.coords.longitude, pos.coords.latitude]),
@@ -48,7 +51,6 @@ const RequestForm = () => {
       );
     }
 
-    // Load Razorpay script
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.async = true;
@@ -61,14 +63,89 @@ const RequestForm = () => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    
+    if (name === "isNGO" && checked) {
+      setVerificationStatus("pending_documents");
+    }
+    
+    if (name === "item") {
+      const itemValue = value.toLowerCase();
+      let detectedCategory = "";
+      
+      if (itemValue.includes("book") || itemValue.includes("notebook") || itemValue.includes("textbook")) {
+        detectedCategory = "books";
+      } else if (itemValue.includes("cloth") || itemValue.includes("dress") || itemValue.includes("shirt") || 
+                 itemValue.includes("pant") || itemValue.includes("garment")) {
+        detectedCategory = "clothes";
+      } else if (itemValue.includes("food") || itemValue.includes("grocery") || itemValue.includes("rice") || 
+                 itemValue.includes("wheat") || itemValue.includes("vegetable") || itemValue.includes("fruit")) {
+        detectedCategory = "food";
+      }
+      
+      setItemCategory(detectedCategory);
+    }
+    
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
   };
 
+  const handleNgoDocumentUpload = (e) => {
+    const files = Array.from(e.target.files);
+    
+    if (files.length > 0) {
+      const newDocuments = files.map(file => ({
+        file,
+        type: documentTypeFromName(file.name),
+        uploaded: new Date(),
+        status: "pending_review"
+      }));
+      
+      setNgoDocuments([...ngoDocuments, ...newDocuments]);
+      setVerificationStatus("documents_uploaded");
+    }
+  };
+
+  const documentTypeFromName = (filename) => {
+    const name = filename.toLowerCase();
+    if (name.includes("certificate") || name.includes("registration")) return "registration_certificate";
+    if (name.includes("pan") || name.includes("tax")) return "pan_card";
+    if (name.includes("bank") || name.includes("account")) return "bank_account_proof";
+    if (name.includes("director") || name.includes("trustee")) return "leadership_proof";
+    if (name.includes("activity") || name.includes("report")) return "activity_report";
+    return "other";
+  };
+
+  const removeNgoDocument = (index) => {
+    const updatedDocuments = [...ngoDocuments];
+    updatedDocuments.splice(index, 1);
+    setNgoDocuments(updatedDocuments);
+    
+    if (updatedDocuments.length === 0) {
+      setVerificationStatus("pending_documents");
+    }
+  };
+
   const handleFileChange = (e) => {
     setAttachment(e.target.files[0]);
+  };
+
+  const calculateRequiredCredits = () => {
+    if (formData.requestType !== "item" || !formData.quantity) return 0;
+    
+    const quantity = parseInt(formData.quantity) || 1;
+    
+    switch(itemCategory) {
+      case "books":
+        return Math.min(quantity*5, 1000); 
+      case "clothes":
+        return Math.min(quantity*5, 1000); 
+      case "food":
+        return Math.min(quantity * 5, 1000); 
+      default:
+        return 35;
+    }
   };
 
   const submitRequest = async (paymentData = null) => {
@@ -84,16 +161,16 @@ const RequestForm = () => {
             : formData.item || "General Request",
         quantity: parseInt(formData.quantity) || 1,
         coordinates,
+        itemCategory: formData.requestType === "item" ? itemCategory : undefined,
+        ngoStatus: formData.isNGO ? verificationStatus : "not_applicable",
       };
 
-      // Add payment data if available
       if (paymentData) {
         payload.razorpayPaymentId = paymentData.razorpay_payment_id;
         payload.razorpayOrderId = paymentData.razorpay_order_id;
         payload.razorpaySignature = paymentData.razorpay_signature;
       }
 
-      // Remove delivery preference for money requests
       if (formData.requestType === "money") {
         delete payload.deliveryPreference;
         delete payload.paymentMode;
@@ -103,6 +180,11 @@ const RequestForm = () => {
       const formDataToSend = new FormData();
       for (const key in payload) formDataToSend.append(key, payload[key]);
       if (attachment) formDataToSend.append("attachment", attachment);
+      
+      ngoDocuments.forEach((doc, index) => {
+        formDataToSend.append(`ngoDocument_${index}`, doc.file);
+        formDataToSend.append(`ngoDocumentType_${index}`, doc.type);
+      });
 
       const res = await fetch("http://localhost:5000/api/requests", {
         method: "POST",
@@ -135,11 +217,10 @@ const RequestForm = () => {
 
   const initiateRazorpayPayment = async (amount) => {
     try {
-      // Create order - use the same endpoint as DonationForm
       const orderRes = await fetch("http://localhost:5000/api/payments/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: amount * 100 }), // Convert to paise
+        body: JSON.stringify({ amount: amount * 100 }),
       });
 
       if (!orderRes.ok) {
@@ -148,7 +229,6 @@ const RequestForm = () => {
 
       const order = await orderRes.json();
 
-      // Razorpay options
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY,
         amount: order.amount,
@@ -157,7 +237,6 @@ const RequestForm = () => {
         description: "Request Payment",
         order_id: order.id,
         handler: async function (response) {
-          // Verify payment first - use the same endpoint as DonationForm
           try {
             const verifyRes = await fetch("http://localhost:5000/api/payments/verify", {
               method: "POST",
@@ -168,7 +247,6 @@ const RequestForm = () => {
             const verifyData = await verifyRes.json();
             
             if (verifyData.success) {
-              // Submit request with payment details
               await submitRequest(response);
             } else {
               alert("❌ Payment verification failed");
@@ -178,7 +256,7 @@ const RequestForm = () => {
             console.error("Payment verification error:", error);
             alert("❌ Payment verification failed");
             setIsProcessingPayment(false);
-          }
+            }
         },
         prefill: {
           name: formData.requesterName,
@@ -204,9 +282,14 @@ const RequestForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (formData.isNGO && verificationStatus === "pending_documents") {
+      alert("⚠️ Please upload NGO verification documents before submitting");
+      return;
+    }
+    
     setIsProcessingPayment(true);
 
-    // Validate bank details for money requests
     if (formData.requestType === "money") {
       if (!formData.accountNumber || !formData.accountHolderName || !formData.ifscCode || !formData.bankName) {
         alert("⚠️ Please fill all bank account details for money transfer");
@@ -218,38 +301,36 @@ const RequestForm = () => {
     let requiredCredits = 0;
     let amountToPay = 0;
 
-    // Calculate required credits and payment amount
     if (formData.requestType === "money") {
-      // Money requests don't require credits or payment from requester
       amountToPay = 0;
-    } else {
-      // For non-money requests, check if NGO or blood request (free)
-      if (formData.isNGO || formData.requestType === "blood" || formData.urgency === "High") {
+    } else if (formData.requestType === "item") {
+      if (formData.isNGO || formData.urgency === "High") {
         requiredCredits = 0;
       } else if (formData.paymentMode === "credits") {
-        requiredCredits = 5;
+        requiredCredits = calculateRequiredCredits();
       } else if (formData.paymentMode === "hybrid") {
         requiredCredits = Number(formData.useCredits) || 0;
-        amountToPay = Math.max(0, 5 - requiredCredits); // Fixed amount of 5 credits equivalent
+        const totalRequired = calculateRequiredCredits();
+        amountToPay = Math.max(0, totalRequired - requiredCredits);
       } else if (formData.paymentMode === "money") {
-        amountToPay = 5; // Fixed amount of 5 credits equivalent
+        requiredCredits = 0;
+        amountToPay = calculateRequiredCredits();
       }
+    } else if (formData.requestType === "blood") {
+      requiredCredits = 0;
+      amountToPay = 0;
     }
 
-    // Check if user has enough credits
     if (user.credits < requiredCredits) {
       alert(`⚠️ You need at least ${requiredCredits} credits to submit this request. Your balance: ${user.credits} credits`);
       setIsProcessingPayment(false);
       return;
     }
 
-    // Handle payment scenarios
     try {
       if (amountToPay > 0) {
-        // Initiate Razorpay payment for money amount
         await initiateRazorpayPayment(amountToPay);
       } else {
-        // Submit request directly if no payment needed
         await submitRequest();
       }
     } catch (error) {
@@ -258,25 +339,131 @@ const RequestForm = () => {
     }
   };
 
-  // Determine button text based on request type and payment mode
   const getButtonText = () => {
     if (isProcessingPayment) {
       return "Processing...";
     }
     
-    // Money requests should show "Submit Request"
     if (formData.requestType === "money") {
       return "Submit Request";
     }
     
-    // For item requests, show "Proceed to Payment" only for money/hybrid payment modes
     if (formData.requestType === "item" && 
-        (formData.paymentMode === "money" || formData.paymentMode === "hybrid")) {
+        (formData.paymentMode === "money" || formData.paymentMode === "hybrid") &&
+        calculateRequiredCredits() > 0) {
       return "Proceed to Payment";
     }
     
-    // Default to "Submit Request"
     return "Submit Request";
+  };
+
+  const renderCostInfo = () => {
+    if (formData.requestType !== "item") return null;
+    
+    const requiredCredits = calculateRequiredCredits();
+    
+    if (formData.isNGO || formData.urgency === "High") {
+      return <p className="text-success">✅ This request is free for NGOs and high urgency cases</p>;
+    }
+    
+    if (formData.paymentMode === "credits") {
+      return <p className="text-muted">⚡ You need <b>{requiredCredits} credits</b> to submit this request. Balance: <b>{user.credits}</b></p>;
+    }
+    
+    if (formData.paymentMode === "hybrid") {
+      const creditsToUse = Number(formData.useCredits) || 0;
+      const remainingPayment = Math.max(0, requiredCredits - creditsToUse);
+      
+      return (
+        <>
+          <div className="mb-3">
+            <label className="form-label">Credits to Use (max {requiredCredits})</label>
+            <input 
+              type="number" 
+              name="useCredits" 
+              className="form-control" 
+              value={formData.useCredits} 
+              onChange={handleChange} 
+              min="0" 
+              max={Math.min(user.credits, requiredCredits)} 
+            />
+          </div>
+          <p className="text-muted">
+            Balance: <b>{user.credits}</b> credits <br />
+            Remaining Payment (Money): ₹{remainingPayment}
+          </p>
+        </>
+      );
+    }
+    
+    if (formData.paymentMode === "money") {
+      return <p className="text-muted">💰 You need to pay <b>₹{requiredCredits}</b> to submit this request</p>;
+    }
+    
+    return null;
+  };
+
+  const renderNgoVerificationSection = () => {
+    if (!formData.isNGO) return null;
+    
+    return (
+      <div className="ngo-verification-section mt-4 p-3 border rounded">
+        <h5 className="mb-3">NGO Verification</h5>
+        
+        {verificationStatus === "pending_documents" && (
+          <>
+            <p className="text-info">
+              🔍 To qualify for NGO benefits, please upload verification documents:
+            </p>
+            <ul className="text-muted small">
+              <li>Registration Certificate</li>
+              <li>PAN Card</li>
+              <li>Bank Account Proof</li>
+              <li>Leadership/Trustee Details</li>
+              <li>Recent Activity Report (optional)</li>
+            </ul>
+          </>
+        )}
+        
+        {verificationStatus === "documents_uploaded" && (
+          <p className="text-success">
+            ✅ Documents uploaded! Your request will be processed after verification.
+          </p>
+        )}
+        
+        <div className="mb-3">
+          <label className="form-label">Upload NGO Verification Documents</label>
+          <input 
+            type="file" 
+            className="form-control" 
+            onChange={handleNgoDocumentUpload} 
+            accept=".jpg,.jpeg,.png,.pdf" 
+            multiple 
+          />
+          <div className="form-text">You can select multiple files</div>
+        </div>
+        
+        {ngoDocuments.length > 0 && (
+          <div className="uploaded-documents">
+            <h6>Uploaded Documents:</h6>
+            <ul className="list-group">
+              {ngoDocuments.map((doc, index) => (
+                <li key={index} className="list-group-item d-flex justify-content-between align-items-center">
+                  <span>{doc.file.name} <small className="text-muted">({doc.type.replace('_', ' ')})</small></span>
+                  <button 
+                    type="button" 
+                    className="btn btn-sm btn-outline-danger"
+                    onClick={() => removeNgoDocument(index)}
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -347,6 +534,11 @@ const RequestForm = () => {
                 <div className="mb-3">
                   <label className="form-label">Item Needed</label>
                   <input type="text" name="item" className="form-control" value={formData.item} onChange={handleChange} required />
+                  {itemCategory && (
+                    <div className="form-text">
+                      Detected category: {itemCategory}
+                    </div>
+                  )}
                 </div>
                 <div className="mb-3">
                   <label className="form-label">Urgency</label>
@@ -407,8 +599,10 @@ const RequestForm = () => {
               <label className="form-check-label">Requesting as an NGO</label>
             </div>
 
+            {renderNgoVerificationSection()}
+
             <div className="mb-3">
-              <label className="form-label">Upload Document (optional)</label>
+              <label className="form-label">Upload Additional Document (optional)</label>
               <input type="file" className="form-control" onChange={handleFileChange} accept=".jpg,.jpeg,.png,.pdf" />
             </div>
 
@@ -423,41 +617,14 @@ const RequestForm = () => {
                   </select>
                 </div>
 
-                {formData.paymentMode === "credits" && (
-                  <p className="text-muted">⚡ You need <b>5 credits</b> to submit this request. Balance: <b>{user.credits}</b></p>
-                )}
-
-                {formData.paymentMode === "hybrid" && (
-                  <>
-                    <div className="mb-3">
-                      <label className="form-label">Credits to Use (max 5)</label>
-                      <input 
-                        type="number" 
-                        name="useCredits" 
-                        className="form-control" 
-                        value={formData.useCredits} 
-                        onChange={handleChange} 
-                        min="0" 
-                        max={Math.min(user.credits, 5)} 
-                      />
-                    </div>
-                    <p className="text-muted">
-                      Balance: <b>{user.credits}</b> credits <br />
-                      Remaining Payment (Money): ₹{Math.max(0, 5 - Number(formData.useCredits))}
-                    </p>
-                  </>
-                )}
-
-                {formData.paymentMode === "money" && (
-                  <p className="text-muted">💰 You need to pay <b>₹5</b> to submit this request</p>
-                )}
+                {renderCostInfo()}
               </>
             )}
 
             <button 
               type="submit" 
               className="btn btn-primary w-100 mt-3"
-              disabled={isProcessingPayment}
+              disabled={isProcessingPayment || (formData.isNGO && verificationStatus === "pending_documents")}
             >
               {getButtonText()}
             </button>

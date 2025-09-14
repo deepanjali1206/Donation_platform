@@ -18,7 +18,6 @@ export default function CreditsDashboard() {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // ✅ match backend keys
         setEarned(res.data.earned);
         setPending(res.data.pending);
         setSpent(res.data.spent);

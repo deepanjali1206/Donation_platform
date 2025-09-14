@@ -9,7 +9,7 @@ export default function DonationForm() {
   const location = useLocation();
 
   const [currentUser, setCurrentUser] = useState(null);
-  const [cause, setCause] = useState(location.state?.cause || null); // ✅ prefill if passed from CausePage
+  const [cause, setCause] = useState(location.state?.cause || null);
   const [form, setForm] = useState({
     title: location.state?.cause?.title || "",
     category: location.state?.cause?.category || "",
@@ -25,7 +25,6 @@ export default function DonationForm() {
   });
   const [file, setFile] = useState(null);
 
-  // Load current user from localStorage
   useEffect(() => {
     try {
       const u = JSON.parse(localStorage.getItem("circleUser"));
@@ -33,7 +32,6 @@ export default function DonationForm() {
     } catch { }
   }, []);
 
-  // Fetch the selected campaign from backend (only if not passed via state)
   useEffect(() => {
     if (!cause && id) {
       const fetchCause = async () => {
@@ -54,7 +52,6 @@ export default function DonationForm() {
     }
   }, [id, cause]);
 
-  // Autofill donor email if logged in
   useEffect(() => {
     if (currentUser?.email) {
       setForm((f) => ({ ...f, donorEmail: currentUser.email }));
@@ -64,7 +61,6 @@ export default function DonationForm() {
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
   const handleFileChange = (e) => setFile(e.target.files[0]);
 
-  // Razorpay payment handler
   const handlePayment = async (e) => {
     e.preventDefault();
     if (!form.amount || Number(form.amount) <= 0) {
@@ -106,7 +102,6 @@ export default function DonationForm() {
             },
           });
 
-          // ✅ update credits in UI
           if (res.data?.updatedCredits) {
             const updatedUser = { ...currentUser, credits: res.data.updatedCredits };
             setCurrentUser(updatedUser);
@@ -132,7 +127,6 @@ export default function DonationForm() {
     }
   };
 
-  // Form submission for non-money donations
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -165,7 +159,6 @@ export default function DonationForm() {
           },
         });
 
-        // ✅ update credits in UI
         if (res.data?.updatedCredits) {
           const updatedUser = { ...currentUser, credits: res.data.updatedCredits };
           setCurrentUser(updatedUser);
@@ -186,7 +179,6 @@ export default function DonationForm() {
     }
   };
 
-  // ✅ fallback title if no campaign
   const campaignTitle = form.title || "General Donation";
 
   return (
@@ -195,7 +187,7 @@ export default function DonationForm() {
         <h2 className="form-title">Donate to {campaignTitle}</h2>
 
         <form>
-          {/* donor info */}
+      
           <div className="mb-3">
             <label className="form-label">Your Name</label>
             <input
@@ -221,7 +213,6 @@ export default function DonationForm() {
             />
           </div>
 
-          {/* donation type */}
           {form.donationType !== "blood" && (
             <div className="mb-3">
               <label className="form-label">Donation Type</label>
@@ -238,7 +229,6 @@ export default function DonationForm() {
             </div>
           )}
 
-          {/* money */}
           {form.donationType === "money" && (
             <div className="mb-3">
               <label className="form-label">Donation Amount (₹)</label>
@@ -257,7 +247,6 @@ export default function DonationForm() {
             </div>
           )}
 
-          {/* item */}
           {form.donationType === "item" && (
             <>
               <div className="mb-3">
@@ -295,7 +284,6 @@ export default function DonationForm() {
             </>
           )}
 
-          {/* blood */}
           {form.donationType === "blood" && (
             <>
               <div className="mb-3">

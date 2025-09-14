@@ -8,7 +8,7 @@ function CausesPage() {
   useEffect(() => {
     const fetchCampaigns = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/campaigns"); // backend route
+        const response = await fetch("http://localhost:5000/api/campaigns"); 
         const data = await response.json();
         setCampaigns(data);
       } catch (error) {

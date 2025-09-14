@@ -1,10 +1,9 @@
-// client/src/pages/CreditsDashboard.jsx
+
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
 import BronzeWelcome from "../components/BronzeWelcome";
 
-// 🎖 Define gamified levels with updated badge colors
 const LEVELS = [
   {
     name: "Bronze",
@@ -43,7 +42,6 @@ const LEVELS = [
   },
 ];
 
-// ⭐ Inline Badge component
 const Badge = ({ level }) => {
   const badges = {
     Bronze: { emoji: "🥉", color: "#cd7f32" },
@@ -82,7 +80,6 @@ export default function CreditsDashboard() {
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
   const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-  // 🔹 Fetch user credits
   const fetchCredits = useCallback(async () => {
     if (!token) {
       setLoading(false);
@@ -105,7 +102,6 @@ export default function CreditsDashboard() {
     }
   }, [token, API_BASE]);
 
-  // 🔹 Fetch leaderboard data
   const fetchTopDonors = useCallback(async () => {
     try {
       setLeaderboardLoading(true);
@@ -124,7 +120,6 @@ export default function CreditsDashboard() {
     fetchCredits();
     fetchTopDonors();
 
-    // Refresh every 30 sec
     const interval = setInterval(() => {
       fetchCredits();
       fetchTopDonors();
@@ -136,7 +131,6 @@ export default function CreditsDashboard() {
   if (loading)
     return <p className="text-center text-lg">Loading credits...</p>;
 
-  // Determine current level
   const currentLevel =
     LEVELS.find(
       (lvl) => credits.earned >= lvl.min && credits.earned <= lvl.max
@@ -144,21 +138,19 @@ export default function CreditsDashboard() {
 
   const nextLevel = LEVELS.find((lvl) => credits.earned < lvl.min);
 
-  // Progress percentage
   const progress =
     ((credits.earned - currentLevel.min) / (currentLevel.max - currentLevel.min)) *
     100;
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-10">
-      {/* Bronze Welcome Component */}
+  
       <BronzeWelcome credits={credits} currentLevel={currentLevel} />
 
       <h2 className="text-4xl font-extrabold mb-8 text-center">
         💰 Credits Dashboard
       </h2>
 
-      {/* Profile Highlight Banner */}
       {["Gold", "Platinum", "Diamond"].includes(currentLevel.name) && (
         <div
           className={`p-4 mb-6 rounded-xl shadow-lg text-center border-4`}
@@ -172,7 +164,6 @@ export default function CreditsDashboard() {
         </div>
       )}
 
-      {/* Current Level Badge */}
       <div
         className={`p-8 rounded-2xl shadow-lg mb-10 bg-gradient-to-r ${currentLevel.color} text-white`}
       >
@@ -193,7 +184,6 @@ export default function CreditsDashboard() {
         </div>
       </div>
 
-      {/* Credits summary */}
       <div className="grid grid-cols-2 gap-6 mb-10">
         <div className="p-6 bg-green-100 text-center rounded-xl shadow-md">
           <p className="text-xl font-semibold">Earned Credits</p>
@@ -205,7 +195,6 @@ export default function CreditsDashboard() {
         </div>
       </div>
 
-      {/* Gamified Levels Tabs */}
       <div className="bg-white p-6 rounded-xl shadow-md mb-10">
         <h3 className="text-2xl font-bold mb-6 text-center">
           🎮 Gamified Levels
@@ -245,7 +234,6 @@ export default function CreditsDashboard() {
         </motion.div>
       </div>
 
-      {/* Special Donor Leaderboard */}
       {["Gold", "Platinum", "Diamond"].includes(currentLevel.name) && (
         <div className="bg-white p-6 rounded-xl shadow-md mb-10">
           <h3 className="text-2xl font-bold mb-4 text-center">
@@ -277,7 +265,6 @@ export default function CreditsDashboard() {
         </div>
       )}
 
-      {/* Exclusive Events & VIP Recognition */}
       {["Platinum", "Diamond"].includes(currentLevel.name) && (
         <div className="bg-white p-6 rounded-xl shadow-md mb-10">
           <h3 className="text-2xl font-bold mb-4 text-center">
@@ -293,7 +280,6 @@ export default function CreditsDashboard() {
         </div>
       )}
 
-      {/* Credit history */}
       <div className="bg-white p-6 rounded-xl shadow-md">
         <h3 className="text-2xl font-bold mb-4">📜 Credit History</h3>
         {credits.history.length > 0 ? (

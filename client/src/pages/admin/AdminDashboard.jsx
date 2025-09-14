@@ -11,9 +11,9 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [requests, setRequests] = useState([]);
   const [reports, setReports] = useState([]);
+  const [ngos, setNgos] = useState([]); 
   const [loading, setLoading] = useState(false);
 
-  // ---- Fetchers ----
   const fetchDonations = async () => {
     setLoading(true);
     try {
@@ -21,6 +21,18 @@ export default function AdminDashboard() {
       setDonations(data);
     } catch (err) {
       console.error("Error fetching donations:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchNGOs = async () => {
+    setLoading(true);
+    try {
+      const { data } = await api.get("/api/ngos");
+      setNgos(data);
+    } catch (err) {
+      console.error("Error fetching NGOs:", err);
     } finally {
       setLoading(false);
     }
@@ -62,7 +74,6 @@ export default function AdminDashboard() {
     }
   };
 
-  
   const updateDonationStatus = async (id, status) => {
     try {
       const { data } = await api.put(`/api/donations/${id}/status`, { status });
@@ -90,7 +101,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // ---- Lifecycle ----
   useEffect(() => {
     switch (section) {
       case "users":
@@ -98,6 +108,9 @@ export default function AdminDashboard() {
         break;
       case "donations":
         fetchDonations();
+        break;
+      case "ngos":
+        fetchNGOs();
         break;
       case "requests":
         fetchRequests();
@@ -111,6 +124,7 @@ export default function AdminDashboard() {
         fetchDonations();
         fetchRequests();
         fetchReports();
+        fetchNGOs();
         break;
     }
   }, [section]);
@@ -129,6 +143,7 @@ export default function AdminDashboard() {
         Admin Dashboard
       </h2>
 
+    
       <div className="flex justify-center gap-3 mb-10 flex-wrap">
         {["overview", "users", "donations", "ngos", "requests", "reports"].map(
           (s) => (
@@ -147,7 +162,7 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      {/* ---- Sections ---- */}
+     
       {section === "overview" && (
         <div className="space-y-8">
           <p className="text-center text-gray-600 text-lg">
@@ -164,7 +179,7 @@ export default function AdminDashboard() {
             />
             <DashboardCard
               title="NGOs"
-              value="—"
+              value={ngos.length || "—"}
               subtitle="Connected NGOs"
               color="green"
               link={{ section: "ngos", text: "Manage NGOs" }}
@@ -198,6 +213,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
+    
       {section === "users" && (
         <SectionTable
           title="Manage Users"
@@ -206,6 +222,7 @@ export default function AdminDashboard() {
         />
       )}
 
+      
       {section === "donations" && (
         <>
           <h3 className="text-2xl font-bold mb-5 text-center text-indigo-500 drop-shadow-sm">
@@ -270,13 +287,15 @@ export default function AdminDashboard() {
         </>
       )}
 
+      
       {section === "requests" && (
         <SectionTable
           title="Manage Requests"
-          columns={["Name", "Email", "Type", "Status", "Actions"]}
+          columns={["Name", "Email","Quantity" ,"Type", "Status", "Actions"]}
           data={requests.map((r) => [
             r.name || r.requesterName,
             r.email || r.requesterEmail,
+            r.quantity||r.requestedQuantity,
             r.type || r.category,
             r.status,
             <div className="space-x-2" key={r._id}>
@@ -295,6 +314,7 @@ export default function AdminDashboard() {
         />
       )}
 
+     
       {section === "reports" && (
         <SectionTable
           title="Contact Form Reports"
@@ -308,12 +328,19 @@ export default function AdminDashboard() {
         />
       )}
 
-      {section === "ngos" && <PlaceholderSection text="NGOs section will come here." />}
+  
+      {section === "ngos" && (
+        <SectionTable
+          title="Manage NGOs"
+          columns={["Name", "Email", "Status"]}
+          data={ngos.map((ngo) => [ngo.name, ngo.email, ngo.status])}
+        />
+      )}
     </div>
   );
 }
 
-// ----- Reusable subcomponents -----
+
 
 function DashboardCard({ title, value, subtitle, color, link, setSection }) {
   const colors = {
@@ -392,11 +419,5 @@ function ActionButton({ label, color, onClick }) {
     >
       {label}
     </button>
-  );
-}
-
-function PlaceholderSection({ text }) {
-  return (
-    <p className="text-center text-gray-600 mt-10 text-lg font-medium">{text}</p>
   );
 }

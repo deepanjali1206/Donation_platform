@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 
 module.exports = function (req, res, next) {
-  // Get token from headers
+  
   const token = req.headers.authorization?.split(" ")[1];
 
   if (!token) {
@@ -9,10 +9,9 @@ module.exports = function (req, res, next) {
   }
 
   try {
-    // Verify token
+    
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Add user info to request object
     req.user = decoded;
 
     next();

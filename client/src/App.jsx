@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { Navigate } from "react-router-dom"; 
+
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -53,8 +55,8 @@ function App() {
         <Route path="/my-donations" element={<MyDonations />} />
         <Route path="/my-requests" element={<MyRequests />} />
         <Route path="/credits" element={<CreditsDashboard />} />
-        {/* ✅ Correct route for donating to a specific campaign */}
         <Route path="/donate/:id" element={<DonationForm />} />
+        <Route path="/admin-dashboard" element={<Navigate to="/admin/dashboard" replace />} />
 
         <Route 
           path="/admin/dashboard" 

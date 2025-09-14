@@ -1,13 +1,6 @@
 const Request = require("../models/Request");
 const User = require("../models/User");
 
-/**
- * Create Request with flexible credits/payment logic
- * - user is req.user.id
- * - supports paymentMode: "credits" | "money" | "hybrid"
- * - does NOT deduct pending credits; only deducts from earned credits
- * - free cases: NGO, elderly, children, supporters, blood requests
- */
 exports.createRequest = async (req, res) => {
   try {
     if (!req.user?.id) {
@@ -20,6 +13,7 @@ exports.createRequest = async (req, res) => {
     const {
       title,
       category,
+      requestType,
       requesterName,
       requesterEmail,
       requesterPhone,
@@ -31,15 +25,26 @@ exports.createRequest = async (req, res) => {
       bloodGroup,
       date,
       location,
+      deliveryPreference,
       isNGO,
-      coordinates,
+      ngoStatus,
+      itemCategory,
       paymentMode,
       useCredits,
+      accountNumber,
+      accountHolderName,
+      ifscCode,
+      bankName,
+      razorpayPaymentId,
+      razorpayOrderId,
+      razorpaySignature,
+      coordinates
     } = req.body;
 
     const doc = {
       title,
       category,
+      requestType,
       requesterName,
       requesterEmail,
       requesterPhone,
@@ -51,12 +56,22 @@ exports.createRequest = async (req, res) => {
       bloodGroup,
       date,
       location,
+      deliveryPreference,
       isNGO: isNGO === "true" || isNGO === true,
+      ngoStatus: isNGO === "true" || isNGO === true ? ngoStatus : "not_applicable",
+      itemCategory,
       paymentMode,
       useCredits: useCredits ? Number(useCredits) : 0,
+      accountNumber,
+      accountHolderName,
+      ifscCode,
+      bankName,
+      razorpayPaymentId,
+      razorpayOrderId,
+      razorpaySignature,
       user: req.user.id,
-      status: "pending", // unified lowercase
-      isFree: false, // default, may change below
+      status: "pending",
+      isFreeRequest: false,
     };
 
     if (coordinates && typeof coordinates === "string") {
@@ -66,59 +81,116 @@ exports.createRequest = async (req, res) => {
       }
     }
 
-    if (req.file) {
-      doc.attachment = `/uploads/${req.file.filename}`;
+    
+    if (req.files) {
+      const ngoDocuments = [];
+      Object.keys(req.files).forEach(key => {
+        if (key.startsWith('ngoDocument_')) {
+          const index = key.replace('ngoDocument_', '');
+          const documentType = req.body[`ngoDocumentType_${index}`] || 'other';
+          
+          ngoDocuments.push({
+            filename: `/uploads/${req.files[key][0].filename}`,
+            originalName: req.files[key][0].originalname,
+            documentType,
+            uploadedAt: new Date(),
+            status: "pending_review"
+          });
+        }
+      });
+      
+      if (ngoDocuments.length > 0) {
+        doc.ngoDocuments = ngoDocuments;
+      }
+      
+      
+      if (req.files.attachment) {
+        doc.attachment = `/uploads/${req.files.attachment[0].filename}`;
+      }
     }
 
-    // --- Credits / Free logic ---
     let requiredCredits = 0;
     let freeCase = false;
 
-    // Free request conditions
+  
     if (
       doc.isNGO ||
       user.role === "elderly" ||
       user.role === "child" ||
       user.role === "supporter" ||
-      doc.category?.toLowerCase() === "blood"
+      doc.requestType === "blood" ||
+      doc.urgency === "High"
     ) {
       freeCase = true;
-      doc.isFree = true;
-    } else {
-      // Paid cases
-      if (paymentMode === "credits") {
-        requiredCredits = 5; // static (can be dynamic later)
-      } else if (paymentMode === "hybrid") {
-        requiredCredits = doc.useCredits || 0;
-      } else {
-        requiredCredits = 0; // money only
+      doc.isFreeRequest = true;
+    } else if (doc.requestType === "item") {
+    
+      const qty = doc.quantity || 1;
+      
+      switch(doc.itemCategory) {
+        case "books":
+          requiredCredits = Math.min(qty * 5, 1000);
+          break;
+        case "clothes":
+          requiredCredits = Math.min(qty * 5, 1000);
+          break;
+        case "food":
+          requiredCredits = Math.min(qty * 5, 1000);
+          break;
+        default:
+          requiredCredits = 35;
+      }
+      
+      doc.creditsRequired = requiredCredits;
+      
+    
+      if (doc.paymentMode === "credits") {
+        doc.creditsUsed = requiredCredits;
+      } else if (doc.paymentMode === "hybrid") {
+        doc.creditsUsed = doc.useCredits || 0;
       }
     }
 
+    
     if (freeCase) {
-      // Log free request in creditHistory using valid enum
       user.creditHistory = user.creditHistory || [];
       user.creditHistory.push({
-        type: "earn", // must match enum ["earn", "spend"]
-        amount: 0,    // free request → 0 credits
-        reason: `Free request created (${doc.category || "general"})`,
+        type: "earn",
+        amount: 0,
+        reason: `Free request created (${doc.requestType || "general"})`,
         date: new Date(),
       });
       await user.save();
     } else if (requiredCredits > 0) {
-      // Deduct credits from earned credits
-      if ((user.credits || 0) < requiredCredits) {
-        return res.status(400).json({ message: "Not enough credits" });
+      if (doc.paymentMode === "credits") {
+        if ((user.credits || 0) < requiredCredits) {
+          return res.status(400).json({ message: "Not enough credits" });
+        }
+        user.credits -= requiredCredits;
+        user.creditHistory = user.creditHistory || [];
+        user.creditHistory.push({
+          type: "spend",
+          amount: requiredCredits,
+          reason: `Created a ${doc.paymentMode} request`,
+          date: new Date(),
+        });
+        await user.save();
+      } else if (doc.paymentMode === "hybrid") {
+        const creditsToUse = doc.useCredits || 0;
+        if ((user.credits || 0) < creditsToUse) {
+          return res.status(400).json({ message: "Not enough credits" });
+        }
+        user.credits -= creditsToUse;
+        user.creditHistory = user.creditHistory || [];
+        user.creditHistory.push({
+          type: "spend",
+          amount: creditsToUse,
+          reason: `Used ${creditsToUse} credits for hybrid payment request`,
+          date: new Date(),
+        });
+        await user.save();
       }
-      user.credits -= requiredCredits;
-      user.creditHistory = user.creditHistory || [];
-      user.creditHistory.push({
-        type: "spend",
-        amount: requiredCredits,
-        reason: `Created a ${paymentMode} request`,
-        date: new Date(),
-      });
-      await user.save();
+  
     }
 
     const request = await Request.create(doc);
@@ -129,7 +201,7 @@ exports.createRequest = async (req, res) => {
       message: freeCase
         ? "Request created successfully (free request)."
         : requiredCredits > 0
-        ? `Request created successfully. ${requiredCredits} credits deducted.`
+        ? `Request created successfully. ${doc.creditsUsed} credits deducted.`
         : "Request created successfully (no credits deducted).",
     });
   } catch (err) {
@@ -138,11 +210,12 @@ exports.createRequest = async (req, res) => {
   }
 };
 
-// Fetch all requests (admin)
 exports.getRequests = async (req, res) => {
   try {
     const filter = {};
     if (req.query.status) filter.status = req.query.status.toLowerCase();
+    if (req.query.requestType) filter.requestType = req.query.requestType;
+    
     const requests = await Request.find(filter)
       .populate("user", "name email role")
       .sort({ createdAt: -1 });
@@ -153,7 +226,6 @@ exports.getRequests = async (req, res) => {
   }
 };
 
-// Fetch logged-in user's requests
 exports.getMyRequests = async (req, res) => {
   try {
     if (!req.user?.id) return res.status(401).json({ message: "Unauthorized" });
@@ -167,7 +239,6 @@ exports.getMyRequests = async (req, res) => {
   }
 };
 
-// Admin helpers to change request status (approve/reject/complete)
 async function setStatus(req, res, status) {
   try {
     const { id } = req.params;
@@ -177,6 +248,12 @@ async function setStatus(req, res, status) {
       { new: true }
     );
     if (!request) return res.status(404).json({ message: "Request not found" });
+    
+    
+    if (status === "completed" && request.user && request.user.toString() !== req.user.id) {
+   
+    }
+    
     return res.json({ message: `Request marked as ${status}`, request });
   } catch (err) {
     console.error("setStatus error:", err);
@@ -198,6 +275,27 @@ exports.getRequestById = async (req, res) => {
     return res.json(request);
   } catch (err) {
     console.error("getRequestById error:", err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+
+exports.updateNGOStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    
+    const request = await Request.findByIdAndUpdate(
+      id,
+      { ngoStatus: status },
+      { new: true }
+    );
+    
+    if (!request) return res.status(404).json({ message: "Request not found" });
+    
+    return res.json({ message: `NGO status updated to ${status}`, request });
+  } catch (err) {
+    console.error("updateNGOStatus error:", err);
     return res.status(500).json({ error: err.message });
   }
 };

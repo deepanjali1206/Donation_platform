@@ -1,14 +1,11 @@
-// controllers/donationController.js
+
 const Donation = require("../models/Donation");
 const User = require("../models/User");
 
-/**
- * Credit rules — tune as needed
- */
 const CREDIT_RULES = {
-  MONEY_PER_100_RUPEES: 10, // ₹100 => 10 credits
-  ITEM_PER_UNIT: 5,         // 1 item => 5 credits
-  BLOOD_FIXED: 20,          // blood donation => 20 credits
+  MONEY_PER_100_RUPEES: 10, 
+  ITEM_PER_UNIT: 5,         
+  BLOOD_FIXED: 20,         
 };
 
 function calculateCredits({ donationType, amount = 0, quantity = 0 }) {
@@ -24,13 +21,6 @@ function calculateCredits({ donationType, amount = 0, quantity = 0 }) {
   return 0;
 }
 
-/**
- * Create a new donation
- * - Links donation to logged-in user
- * - Calculates credits
- * - Adds pendingCredits
- * - Creates a "pending" creditHistory entry
- */
 const createDonation = async (req, res) => {
   try {
     const {
@@ -55,7 +45,6 @@ const createDonation = async (req, res) => {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Basic validations
     if (!donorName || !donationType) {
       return res.status(400).json({ message: "Donor name and donation type are required." });
     }
@@ -83,7 +72,6 @@ const createDonation = async (req, res) => {
       });
     }
 
-    // Build donation document
     const donation = new Donation({
       title: title || "",
       category: category || "",
@@ -104,13 +92,11 @@ const createDonation = async (req, res) => {
       location: donationType === "blood" ? location : undefined,
     });
 
-    // Calculate & set credits on donation
     const credits = calculateCredits({ donationType, amount, quantity });
     donation.credits = credits;
 
     await donation.save();
 
-    // Update user's pending credits & history
     if (credits > 0) {
       user.pendingCredits = (user.pendingCredits || 0) + credits;
 
@@ -118,7 +104,7 @@ const createDonation = async (req, res) => {
       user.creditHistory.push({
         type: "earn",
         amount: credits,
-        reason: `${donationType} donation submitted`, // keep this format for matching later
+        reason: `${donationType} donation submitted`, 
         status: "pending",
         date: new Date(),
       });
@@ -138,11 +124,7 @@ const createDonation = async (req, res) => {
   }
 };
 
-/**
- * Update donation status (admin action)
- * - When moved to Delivered → transfer credits from pending → earned
- * - Update credit history entry from "pending" → "earned"
- */
+
 const updateDonationStatus = async (req, res) => {
   try {
     const { status } = req.body;
@@ -157,7 +139,6 @@ const updateDonationStatus = async (req, res) => {
     donation.status = status;
     await donation.save();
 
-    // Only when moving into Delivered (and wasn't delivered before)
     if (prevStatus !== "Delivered" && status === "Delivered") {
       const user = await User.findById(donation.user);
       if (!user) {
@@ -166,15 +147,12 @@ const updateDonationStatus = async (req, res) => {
 
       const earnedCredits = Number(donation.credits) || 0;
 
-      // Move from pending → earned
       user.pendingCredits = Math.max((user.pendingCredits || 0) - earnedCredits, 0);
       user.credits = (user.credits || 0) + earnedCredits;
 
-      // Find the most appropriate pending entry to flip to earned:
-      // match by type, status, amount, and reason including the donationType
       let historyEntry = user.creditHistory
-        .slice() // copy to avoid mutating during search order
-        .reverse() // prefer the most recent pending entry first
+        .slice() 
+        .reverse() 
         .find(
           (h) =>
             h.type === "earn" &&
@@ -186,8 +164,7 @@ const updateDonationStatus = async (req, res) => {
         );
 
       if (historyEntry) {
-        // Since we reversed for search, we need the original reference to mutate.
-        // Find original index to update the correct object.
+        
         const idx = user.creditHistory.findIndex(
           (h) =>
             h.type === historyEntry.type &&
@@ -202,7 +179,7 @@ const updateDonationStatus = async (req, res) => {
           user.creditHistory[idx].date = new Date();
         }
       } else {
-        // If no matching pending record found, append a new earned record as fallback
+        
         user.creditHistory.push({
           type: "earn",
           amount: earnedCredits,
@@ -229,9 +206,7 @@ const updateDonationStatus = async (req, res) => {
   }
 };
 
-/**
- * Admin: Get all donations
- */
+
 const getDonations = async (req, res) => {
   try {
     const donations = await Donation.find()
@@ -244,9 +219,7 @@ const getDonations = async (req, res) => {
   }
 };
 
-/**
- * User: Get my donations
- */
+
 const getMyDonations = async (req, res) => {
   try {
     if (!req.user?.id) return res.status(401).json({ message: "Unauthorized" });

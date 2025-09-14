@@ -1,4 +1,4 @@
-// server/models/Report.js
+
 const mongoose = require('mongoose');
 
 const reportSchema = new mongoose.Schema({
@@ -6,7 +6,7 @@ const reportSchema = new mongoose.Schema({
   email: String,
   subject: String,
   message: String,
-  status: { type: String, default: "New" }, // optional
+  status: { type: String, default: "New" }, 
   createdAt: { type: Date, default: Date.now }
 });
 

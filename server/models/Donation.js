@@ -1,4 +1,4 @@
-// models/Donation.js
+
 const mongoose = require("mongoose");
 
 const donationSchema = new mongoose.Schema(
@@ -15,22 +15,17 @@ const donationSchema = new mongoose.Schema(
       match: [/.+\@.+\..+/, "Please enter a valid email"],
     },
 
-    // Link donation to user
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
 
-    // Credits for this donation
     credits: { type: Number, default: 0 },
 
-    // For money donations
     amount: { type: Number, min: 0 },
     transactionId: { type: String, trim: true },
 
-    // For item donations
     quantity: { type: Number, min: 1 },
     notes: { type: String, trim: true },
     image: { type: String, default: "" },
 
-    // For blood donations
     bloodGroup: {
       type: String,
       enum: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"],

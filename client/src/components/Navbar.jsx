@@ -1,11 +1,10 @@
-// client/src/components/Navbar.jsx
+
 import React, { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Navbar.css";
 
-// ⭐ Inline Badge component
 const Badge = ({ level, onClick }) => {
   const badges = {
     Bronze: { emoji: "🥉", color: "#cd7f32" },
@@ -42,7 +41,6 @@ function Navbar({ user, onLogout }) {
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
   const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-  // Fetch credits and determine current level
   const fetchCredits = useCallback(async () => {
     if (!token || !user) return;
 
@@ -56,7 +54,6 @@ function Navbar({ user, onLogout }) {
 
       setCredits({ earned, pending });
 
-      // Determine current level based on earned credits
       if (earned >= 1001) setLevel("Diamond");
       else if (earned >= 601) setLevel("Platinum");
       else if (earned >= 301) setLevel("Gold");
@@ -88,14 +85,12 @@ function Navbar({ user, onLogout }) {
   return (
     <nav className="navbar navbar-light bg-light shadow-sm py-3">
       <div className="container-fluid d-flex justify-content-between align-items-center">
-        {/* Left Logo */}
         <div className="navbar-left">
           <Link className="navbar-brand fw-bold fs-4 text-primary" to="/">
             🌍 CircleAid
           </Link>
         </div>
 
-        {/* Center Navigation */}
         <div className="navbar-center d-none d-lg-flex">
           <ul className="navbar-nav flex-row gap-4">
             <li className="nav-item">
@@ -113,7 +108,6 @@ function Navbar({ user, onLogout }) {
           </ul>
         </div>
 
-        {/* Right Section */}
         <div className="navbar-right d-flex align-items-center gap-3">
           {user && (
             <Link

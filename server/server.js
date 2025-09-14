@@ -20,20 +20,20 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 app.use("/uploads", express.static(uploadsDir));
-// Serve static campaign images
+
 app.use("/images", express.static(path.join(__dirname, "public/images")));
 
 
 
 
-const authRoutes = require("./routes/auth.routes");      // your existing file
+const authRoutes = require("./routes/auth.routes");  
 const donationRoutes = require("./routes/donationRoutes");
 const requestRoutes = require("./routes/requestRoutes");
 const userRoutes = require("./routes/userRoutes");
 const paymentsRoute = require("./routes/payments");
 const campaignRoutes = require("./routes/campaignRoutes");
 const reportRoutes = require('./routes/reportRoutes');
-
+const ngoRoutes = require("./routes/ngoRoutes");
 app.use("/api/auth", authRoutes);
 app.use("/api/donations", donationRoutes);
 app.use("/api/requests", requestRoutes);
@@ -41,7 +41,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/payments", paymentsRoute);
 app.use("/api/campaigns", campaignRoutes);
 app.use('/api/reports', reportRoutes);
-
+app.use("/api/ngos", ngoRoutes);
 
 mongoose
   .connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })

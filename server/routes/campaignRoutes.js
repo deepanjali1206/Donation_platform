@@ -2,7 +2,6 @@ const express = require("express");
 const Campaign = require("../models/Campaign");
 const router = express.Router();
 
-// ✅ Get all campaigns
 router.get("/", async (req, res) => {
   try {
     const campaigns = await Campaign.find();
@@ -13,7 +12,6 @@ router.get("/", async (req, res) => {
   }
 });
 
-// ✅ Get single campaign by ID
 router.get("/:id", async (req, res) => {
   try {
     const campaign = await Campaign.findById(req.params.id);

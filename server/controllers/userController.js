@@ -1,10 +1,7 @@
-// controllers/userController.js
+
 const User = require("../models/User");
 const Donation = require("../models/Donation");
 
-/**
- * Get all users (admin only)
- */
 const getAllUsers = async (req, res) => {
   try {
     const users = await User.find().select("-password");
@@ -16,12 +13,6 @@ const getAllUsers = async (req, res) => {
   }
 };
 
-/**
- * Get credits info for logged-in user:
- * - earned: user.credits
- * - pending: user.pendingCredits
- * - history: finalized creditHistory + pending donations
- */
 const getCredits = async (req, res) => {
   try {
     console.log("🟢 getCredits called for user:", req.user.id);
@@ -40,7 +31,6 @@ const getCredits = async (req, res) => {
       creditHistoryLength: user.creditHistory?.length || 0,
     });
 
-    // ✅ Fetch pending donations (not yet approved)
     const pendingDonations = await Donation.find({
       user: req.user.id,
       status: { $in: ["Pending", "Processing"] },
@@ -51,14 +41,13 @@ const getCredits = async (req, res) => {
     console.log("📦 Pending donations found:", pendingDonations.length);
 
     const pendingEntries = (pendingDonations || []).map((d) => ({
-      type: "pending", // ✅ Frontend expects "pending" type
+      type: "pending", 
       amount: d.credits || 0,
       reason: `Donation pending: ${d.title || d.donationType || "donation"}`,
-      status: "pending", // ✅ Frontend expects "pending" status
+      status: "pending", 
       date: d.createdAt,
     }));
 
-    // ✅ Map stored creditHistory (convert status from "confirmed" to "earned")
     const finalizedHistory = (user.creditHistory || []).map((h) => {
       let status = h.status;
       if (h.status === "confirmed") status = "earned";
@@ -74,7 +63,6 @@ const getCredits = async (req, res) => {
       };
     });
 
-    // ✅ Merge both finalized + pending
     const history = [...finalizedHistory, ...pendingEntries];
 
     const responseData = {
@@ -98,20 +86,15 @@ const getCredits = async (req, res) => {
   }
 };
 
-/**
- * Leaderboard: Top Donors + current user's rank
- */
 const getTopDonors = async (req, res) => {
   try {
     console.log("🏆 Fetching top donors leaderboard...");
 
-    // ✅ Fetch top 10 users by credits (no role restriction)
     const topDonors = await User.find()
       .select("name email credits role")
       .sort({ credits: -1 })
       .limit(10);
 
-    // ✅ Compute current user's rank
     let userRank = null;
     let currentUser = null;
 
@@ -124,7 +107,7 @@ const getTopDonors = async (req, res) => {
         const rank = await User.countDocuments({
           credits: { $gt: currentUser.credits },
         });
-        userRank = rank + 1; // position is one more than number of people ahead
+        userRank = rank + 1; 
       }
     }
 

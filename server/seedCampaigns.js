@@ -60,10 +60,10 @@ mongoose
   .then(async () => {
     console.log("✅ MongoDB Connected...");
 
-    await Campaign.deleteMany(); // clear old data
+    await Campaign.deleteMany(); 
     console.log("🗑️ Old campaigns removed");
 
-    await Campaign.insertMany(campaigns); // insert new
+    await Campaign.insertMany(campaigns);
     console.log("🌱 Campaigns seeded successfully!");
 
     mongoose.connection.close();
