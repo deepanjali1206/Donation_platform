@@ -23,37 +23,36 @@ const Register = ({ setUser }) => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  e.preventDefault();
+  setLoading(true);
 
-    try {
-      const res = await fetch("http://localhost:5000/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+  try {
+    const res = await fetch("https://donation-platform-2xhl.onrender.com/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (res.ok) {
-        
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("circleUser", JSON.stringify(data.user));
+    if (res.ok) {
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("circleUser", JSON.stringify(data.user));
 
-        if (setUser) setUser(data.user);
+      if (setUser) setUser(data.user);
 
-        alert("Registered successfully! 🎉");
-        navigate("/");
-      } else {
-        alert(data.message || "Registration failed. Try again.");
-      }
-    } catch (err) {
-      console.error("Registration error:", err);
-      alert("⚠️ Server error. Please try again later.");
-    } finally {
-      setLoading(false);
+      alert("Registered successfully! 🎉");
+      navigate("/");
+    } else {
+      alert(data.message || "Registration failed. Try again.");
     }
-  };
+  } catch (err) {
+    console.error("Registration error:", err);
+    alert("⚠️ Server error. Please try again later.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <section
