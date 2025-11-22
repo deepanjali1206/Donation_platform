@@ -14,13 +14,14 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "https://cirleaid.netlify.app/", 
-      "*"
+      "https://circleaid.netlify.app",  
+      "https://donation-platform-2xhl.onrender.com"
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
 );
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

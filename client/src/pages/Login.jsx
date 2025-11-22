@@ -21,42 +21,41 @@ const Login = ({ setUser }) => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  e.preventDefault();
+  setLoading(true);
 
-    try {
-      const res = await fetch("https://donation-platform-2xhl.onrender.com", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+  try {
+    const res = await fetch("https://donation-platform-2xhl.onrender.com/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (res.ok) {
-     
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("circleUser", JSON.stringify(data.user));
+    if (res.ok) {
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("circleUser", JSON.stringify(data.user));
 
-        setUser(data.user);
+      setUser(data.user);
+      alert("Login successful!");
 
-        alert("Login successful!");
-
-        if (data.user.role === "admin") {
-          navigate("/admin-dashboard");
-        } else {
-          navigate("/");
-        }
+      if (data.user.role === "admin") {
+        navigate("/admin-dashboard");
       } else {
-        alert(data.message || "Invalid login credentials");
+        navigate("/");
       }
-    } catch (error) {
-      console.error("Login error:", error);
-      alert("Server error. Please try again later.");
-    } finally {
-      setLoading(false);
+    } else {
+      alert(data.message || "Invalid login credentials");
     }
-  };
+  } catch (error) {
+    console.error("Login error:", error);
+    alert("Server error. Please try again later.");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <section className="h-100 gradient-form" style={{ backgroundColor: "#eee" }}>
